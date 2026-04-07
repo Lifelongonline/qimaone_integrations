@@ -5,11 +5,25 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
+  "qimaone_details_section",
   "email_id",
   "password",
+  "no_of_hours",
+  "no_of_hours_for_reports_sync",
   "column_break_fojl",
-  "access_token",
-  "refresh_token"
+  "api_token",
+  "refresh_token",
+  "default_qima_uom",
+  "apis_section",
+  "refresh_token_url",
+  "download_inspection_url",
+  "book_inspection_url",
+  "column_break_jguj",
+  "po_import_url",
+  "product_import_url",
+  "section_break_hxod",
+  "qimaone_item_map",
+  "qimaone_supplier_map"
  ],
  "fields": [
   {
@@ -19,7 +33,7 @@
   },
   {
    "fieldname": "password",
-   "fieldtype": "Password",
+   "fieldtype": "Data",
    "label": "Password"
   },
   {
@@ -27,21 +41,92 @@
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "access_token",
-   "fieldtype": "Password",
-   "label": "Access Token"
+   "fieldname": "refresh_token",
+   "fieldtype": "Small Text",
+   "label": "Refresh Token",
+   "read_only": 1
   },
   {
-   "fieldname": "refresh_token",
-   "fieldtype": "Password",
-   "label": "Refresh Token"
+   "fieldname": "api_token",
+   "fieldtype": "Data",
+   "label": "API Token"
+  },
+  {
+   "fieldname": "apis_section",
+   "fieldtype": "Section Break",
+   "label": "APIs"
+  },
+  {
+   "fieldname": "refresh_token_url",
+   "fieldtype": "Data",
+   "label": "Refresh Token URL"
+  },
+  {
+   "fieldname": "download_inspection_url",
+   "fieldtype": "Data",
+   "label": "Download Inspection URL"
+  },
+  {
+   "fieldname": "book_inspection_url",
+   "fieldtype": "Data",
+   "label": "Book Inspection URL"
+  },
+  {
+   "fieldname": "column_break_jguj",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "po_import_url",
+   "fieldtype": "Data",
+   "label": "PO Import URL"
+  },
+  {
+   "fieldname": "product_import_url",
+   "fieldtype": "Data",
+   "label": "Product Import URL"
+  },
+  {
+   "fieldname": "no_of_hours",
+   "fieldtype": "Int",
+   "label": "No of hrs for QIMAone PO sync (Schedular)"
+  },
+  {
+   "fieldname": "no_of_hours_for_reports_sync",
+   "fieldtype": "Int",
+   "label": "Get Inspection Report from Qimaone and a schedular no of hrs for QIMAone inspection sync (Schedular)"
+  },
+  {
+   "fieldname": "section_break_hxod",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "qimaone_item_map",
+   "fieldtype": "Table",
+   "label": "QIMAone Item Map",
+   "options": "QIMAone Item Map"
+  },
+  {
+   "fieldname": "qimaone_supplier_map",
+   "fieldtype": "Table",
+   "label": "QIMAone Supplier Map",
+   "options": "QIMAone Supplier Map"
+  },
+  {
+   "fieldname": "qimaone_details_section",
+   "fieldtype": "Section Break",
+   "label": "QIMAone Details"
+  },
+  {
+   "fieldname": "default_qima_uom",
+   "fieldtype": "Data",
+   "label": "Default QIMA UOM"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-04-01 12:14:41.374470",
+ "modified": "2026-04-07 13:00:37.490843",
  "modified_by": "Administrator",
  "module": "Qimaone Integrations",
  "name": "Qima Settings",
