@@ -1,0 +1,10 @@
+{
+    "Item": [
+        {
+            "fieldname": "custom_uploaded_on_qima",
+            "fieldtype": "Check",
+            "insert_after": "accounting_dimension_check",
+            "label": "Uploaded on Qima"
+        }    
+    ]
+}

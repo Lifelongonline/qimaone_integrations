@@ -6,6 +6,7 @@ frappe.ui.form.on("Qima Settings", {
 		frm.events.create_refresh_buttons(frm);
 		frm.events.create_po_button(frm);
 		frm.events.download_inspections_button(frm);
+		frm.events.create_product_button(frm);
 	},
 	create_refresh_buttons(frm) {
 		frm.add_custom_button(__("Generate Refresh Token"), function () {
@@ -62,5 +63,31 @@ frappe.ui.form.on("Qima Settings", {
 	},
 	download_inspections_button(frm) {
 		frm.add_custom_button(__("Get Inspection Report from Qimaone"), function () {});
+	},
+	create_product_button(frm) {
+		frm.add_custom_button(__("Create Product in QIMAone"), function () {
+			if (!frm.doc.default_qima_uom) {
+				frappe.throw(
+					__(frappe.throw("Please set the Default QIMA UOM before creating the Product."))
+				);
+			}
+			frappe.call({
+				method: "qimaone_integrations.qimaone_integrations.doctype.qima_settings.api.api.product_uploads",
+				args: {
+					token: frm.doc.refresh_token,
+					import_product_url: frm.doc.product_import_url,
+					unit: frm.doc.default_qima_uom,
+				},
+				freeze: true,
+				freeze_message: __("Creating Products in QIMAOne..."),
+				callback: function (r) {
+					frappe.msgprint(
+						__(
+							"Products sent to QIMAOne successfully. For more details please check QIMA Logs."
+						)
+					);
+				},
+			});
+		});
 	},
 });

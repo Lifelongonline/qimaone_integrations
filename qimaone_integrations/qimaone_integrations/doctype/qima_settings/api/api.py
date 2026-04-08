@@ -150,3 +150,91 @@ def fetch_process_status(process_id):
 	headers = {"Authorization": f"Bearer {token}"}
 	response = requests.request("GET", url, headers=headers)
 	return response.json()
+
+
+@frappe.whitelist()
+def product_uploads():
+	"""Prepare CSV from draft inspections and send it to the QIMA import API."""
+
+	qima_settings = frappe.get_single("Qima Settings")
+
+	token = qima_settings.refresh_token
+	po_import_url = qima_settings.product_import_url
+	unit = qima_settings.default_qima_uom
+	file_path = qima_settings.product_import_file_path
+
+	def normalize(value):
+		return (value or "").strip().replace("\ufeff", "").upper()
+
+	qima_settings = frappe.get_single("Qima Settings")
+	mappings = [row for row in qima_settings.qimaone_item_map if row.qimaone_item_code and row.erp_item_code]
+
+	qima_columns = [row.qimaone_item_code for row in mappings]
+	erp_fields = [row.erp_item_code for row in mappings]
+
+	products = frappe.get_all(
+		"Item",
+		filters={"disabled": 0, "custom_uploaded_on_qima": 1},
+		fields=erp_fields,
+	)
+	if not products:
+		frappe.throw(_("No products found."))
+
+	for row in products:
+		barcode = frappe.get_all(
+			"Item Barcode",
+			filters={"barcode_type": "EAN"},
+			fields= ["barcode"]
+		)
+		if barcode:
+			row["GTIN"] = barcode[0].get("barcode")
+
+	file_doc = frappe.get_doc("File", {"file_url": file_path})
+	abs_path = file_doc.get_full_path()
+
+	try:
+		with open(abs_path, newline="", encoding="utf-8-sig") as f:
+			all_rows = list(csv.reader(f))
+
+		if not all_rows:
+			frappe.throw("CSV template is empty")
+
+		header_row = all_rows[0]
+		col_count = len(header_row)
+
+		data_rows = [row for row in all_rows[1:] if any((cell or "").strip() for cell in row)]
+
+		label_to_index = {normalize(label): idx for idx, label in enumerate(header_row)}
+
+		for inspection in products:
+			row = [""] * col_count
+			has_value = False
+
+			for qima_col, erp_field in zip(qima_columns, erp_fields, strict=False):
+				col_idx = label_to_index.get(normalize(qima_col))
+
+				if col_idx is not None:
+					value = inspection.get(erp_field)
+					if value is not None:
+						row[col_idx] = str(value)
+						has_value = True
+
+			if has_value:
+				data_rows.append(row)
+
+		output = io.StringIO()
+		writer = csv.writer(output)
+		writer.writerow(header_row)
+		writer.writerows(data_rows)
+		create_product_on_qima(token, po_import_url, output.getvalue().encode("utf-8"))
+
+	except Exception as e:
+		frappe.throw(_(f"Error processing CSV file: {e}"))
+
+def create_product_on_qima(token, url, file):
+	"""Call the QIMAOne import API with the generated CSV file."""
+	payload = {}
+	files = {"file": ("import_products.csv", file, "text/csv")}
+	headers = {"Authorization": f"Bearer {token}"}
+	response = requests.request("POST", url, headers=headers, data=payload, files=files)
+	create_qima_logs("Product Imports", response)

@@ -11,6 +11,7 @@
   "no_of_hours",
   "no_of_hours_for_reports_sync",
   "po_import_file_path",
+  "product_import_file_path",
   "column_break_fojl",
   "api_token",
   "refresh_token",
@@ -141,13 +142,18 @@
    "in_list_view": 1,
    "label": "PO Import File Path",
    "reqd": 1
+  },
+  {
+   "fieldname": "product_import_file_path",
+   "fieldtype": "Data",
+   "label": "Product Import File Path"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-04-08 12:42:05.333138",
+ "modified": "2026-04-08 16:48:12.590524",
  "modified_by": "Administrator",
  "module": "Qimaone Integrations",
  "name": "Qima Settings",
