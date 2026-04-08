@@ -41,14 +41,23 @@ frappe.ui.form.on("Qima Settings", {
 					__(frappe.throw("Please set the Default QIMA UOM before creating the PO."))
 				);
 			}
-			window.open(
-				"/api/method/qimaone_integrations.qimaone_integrations.doctype.qima_settings.api.api.append_draft_inspections_to_csv",
-				"_blank"
-			);
-			// frappe.call({
-			//     method: "qimaone_integrations.qimaone_integrations.doctype.qima_settings.api.api.append_draft_inspections_to_csv",
-			//     freeze: true
-			// })
+			frappe.call({
+				method: "qimaone_integrations.qimaone_integrations.doctype.qima_settings.api.api.append_draft_inspections_to_csv",
+				args: {
+					token: frm.doc.refresh_token,
+					import_po_url: frm.doc.po_import_url,
+					unit: frm.doc.default_qima_uom,
+				},
+				freeze: true,
+				freeze_message: __("Creating Purchase Orders in QIMAOne..."),
+				callback: function (r) {
+					frappe.msgprint(
+						__(
+							"Purchase Orders sent to QIMAOne successfully. For more details please check QIMA Logs."
+						)
+					);
+				},
+			});
 		});
 	},
 	download_inspections_button(frm) {
