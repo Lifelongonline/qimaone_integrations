@@ -26,7 +26,9 @@
   "process_status_url",
   "section_break_hxod",
   "qimaone_item_map",
-  "qimaone_supplier_map"
+  "qimaone_supplier_map",
+  "qimaone_overlap",
+  "qimaone_item_mapping"
  ],
  "fields": [
   {
@@ -111,13 +113,13 @@
   {
    "fieldname": "qimaone_item_map",
    "fieldtype": "Table",
-   "label": "QIMAone Item Map",
+   "label": "QIMAone Item Template Map",
    "options": "QIMAone Item Map"
   },
   {
    "fieldname": "qimaone_supplier_map",
    "fieldtype": "Table",
-   "label": "QIMAone Supplier Map",
+   "label": "QIMAone Supplier Template Map",
    "options": "QIMAone Supplier Map"
   },
   {
@@ -147,13 +149,25 @@
    "fieldname": "product_import_file_path",
    "fieldtype": "Data",
    "label": "Product Import File Path"
+  },
+  {
+   "fieldname": "qimaone_overlap",
+   "fieldtype": "Table",
+   "label": "QIMAone Supplier Map",
+   "options": "QIMAone Overlap"
+  },
+  {
+   "fieldname": "qimaone_item_mapping",
+   "fieldtype": "Table",
+   "label": "QIMAone Item Map",
+   "options": "QIMAone Item Mapping"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-04-08 16:48:12.590524",
+ "modified": "2026-04-10 15:18:12.996999",
  "modified_by": "Administrator",
  "module": "Qimaone Integrations",
  "name": "Qima Settings",
