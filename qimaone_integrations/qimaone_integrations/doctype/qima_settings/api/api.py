@@ -5,7 +5,7 @@ import json
 import frappe
 import requests
 from frappe import _
-from frappe.utils import now
+from frappe.utils import now, nowdate, get_datetime, now_datetime
 
 
 @frappe.whitelist()
@@ -55,10 +55,11 @@ def append_draft_inspections_to_csv():
 	# adding unit column because there is no mapping of this field but it is required in csv for import api, so we are adding it manually in both qima_columns and erp_fields list.
 	qima_columns = [row.qimaone for row in mappings] + ["UNIT"]
 	erp_fields = [row.erp for row in mappings]
+	supplier_mapping = [row.erp_supplier for row in qima_settings.qimaone_overlap if row.erp_supplier and row.qimaone_supplier]
 
 	inspections = frappe.get_all(
 		"Quality Inspection",
-		filters={"docstatus": 0, "custom_domestic_supplier": 1},
+		filters={"docstatus": 0, "custom_domestic_supplier": 1, "supplier": ["in", supplier_mapping],"creation": ["between", [get_datetime(qima_settings.from_date), now_datetime()]] },
 		fields=erp_fields,
 	)
 	if not inspections:
@@ -198,7 +199,7 @@ def product_uploads():
 	for row in products:
 		barcode = frappe.get_all(
 			"Item Barcode",
-			filters={"barcode_type": "EAN"},
+			filters={"barcode_type": "EAN", "parent": row.item_name},
 			fields= ["barcode"]
 		)
 		if barcode:
@@ -221,11 +222,6 @@ def product_uploads():
 
 		label_to_index = {normalize(label): idx for idx, label in enumerate(header_row)}
 
-		overlap_map = {
-			row.erp_item_code: row.qimaone_item
-			for row in qima_settings.qimaone_item_mapping
-		}
-
 		for inspection in products:
 			row = [""] * col_count
 			has_value = False
@@ -235,8 +231,6 @@ def product_uploads():
 
 				if col_idx is not None:
 					value = inspection.get(erp_field)
-					if value in overlap_map:
-						value = overlap_map[value]
 					if value is not None:
 						row[col_idx] = str(value)
 						has_value = True

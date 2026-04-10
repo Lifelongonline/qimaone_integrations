@@ -14,10 +14,11 @@
  "fields": [
   {
    "fieldname": "erp_supplier",
-   "fieldtype": "Data",
+   "fieldtype": "Link",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "ERP Supplier"
+   "label": "ERP Supplier",
+   "options": "Supplier"
   },
   {
    "fieldname": "qimaone_supplier",
@@ -45,7 +46,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-04-10 15:13:01.039756",
+ "modified": "2026-04-10 18:24:06.129411",
  "modified_by": "Administrator",
  "module": "Qimaone Integrations",
  "name": "QIMAone Overlap",
