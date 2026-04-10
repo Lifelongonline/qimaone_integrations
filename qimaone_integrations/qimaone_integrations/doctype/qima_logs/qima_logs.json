@@ -19,52 +19,61 @@
   {
    "fieldname": "created_on",
    "fieldtype": "Datetime",
-   "label": "Created On"
+   "label": "Created On",
+   "read_only": 1
   },
   {
    "fieldname": "response_message",
    "fieldtype": "Long Text",
-   "label": "Response Message"
+   "label": "Response Message",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_wmjl",
-   "fieldtype": "Column Break"
+   "fieldtype": "Column Break",
+   "read_only": 1
   },
   {
    "fieldname": "process_id",
    "fieldtype": "Data",
-   "label": "Process ID"
+   "label": "Process ID",
+   "read_only": 1
   },
   {
    "fieldname": "section_break_ogjo",
-   "fieldtype": "Section Break"
+   "fieldtype": "Section Break",
+   "read_only": 1
   },
   {
    "fieldname": "status",
    "fieldtype": "Select",
    "label": "Status",
-   "options": "\nSuccess\nFailed"
+   "options": "\nSuccess\nFailed",
+   "read_only": 1
   },
   {
    "fieldname": "title",
    "fieldtype": "Data",
-   "label": "Title"
+   "label": "Title",
+   "read_only": 1
   },
   {
    "fieldname": "process_response",
    "fieldtype": "Long Text",
-   "label": "Process Response"
+   "label": "Process Response",
+   "read_only": 1
   },
   {
    "fieldname": "status_code",
    "fieldtype": "Data",
-   "label": "Status Code"
+   "label": "Status Code",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-04-08 11:20:16.717565",
+ "modified": "2026-04-10 15:41:03.644532",
  "modified_by": "Administrator",
  "module": "Qimaone Integrations",
  "name": "QIMA Logs",

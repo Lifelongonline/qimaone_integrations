@@ -86,6 +86,17 @@ def append_draft_inspections_to_csv():
 
 		label_to_index = {normalize(label): idx for idx, label in enumerate(header_row)}
 
+		overlap_map_supplier = {
+			row.erp_supplier: row.qimaone_supplier
+			for row in qima_settings.qimaone_overlap
+			if row.erp_supplier and row.qimaone_supplier
+		}
+		overlap_map_address = {
+			row.erp_supplier_address: row.qimaone_address
+			for row in qima_settings.qimaone_overlap
+			if row.erp_supplier_address and row.qimaone_address
+		}
+
 		for inspection in inspections:
 			row = [""] * col_count
 			has_value = False
@@ -95,6 +106,10 @@ def append_draft_inspections_to_csv():
 
 				if col_idx is not None:
 					value = inspection.get(erp_field)
+					if value in overlap_map_supplier:
+						value = overlap_map_supplier[value]
+					if value in overlap_map_address:
+						value = overlap_map_address[value]
 					if value is not None:
 						row[col_idx] = str(value)
 						has_value = True
@@ -206,6 +221,11 @@ def product_uploads():
 
 		label_to_index = {normalize(label): idx for idx, label in enumerate(header_row)}
 
+		overlap_map = {
+			row.erp_item_code: row.qimaone_item
+			for row in qima_settings.qimaone_item_mapping
+		}
+
 		for inspection in products:
 			row = [""] * col_count
 			has_value = False
@@ -215,6 +235,8 @@ def product_uploads():
 
 				if col_idx is not None:
 					value = inspection.get(erp_field)
+					if value in overlap_map:
+						value = overlap_map[value]
 					if value is not None:
 						row[col_idx] = str(value)
 						has_value = True
