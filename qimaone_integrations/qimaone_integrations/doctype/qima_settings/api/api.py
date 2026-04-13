@@ -79,7 +79,7 @@ def append_draft_inspections_to_csv():
 		if not all_rows:
 			frappe.throw("CSV template is empty")
 
-		header_row = all_rows[0]
+		header_row = qima_columns
 		col_count = len(header_row)
 
 		# Keep only non-empty existing rows after header
@@ -215,7 +215,7 @@ def product_uploads():
 		if not all_rows:
 			frappe.throw("CSV template is empty")
 
-		header_row = all_rows[0]
+		header_row = qima_columns + ["GTIN"]
 		col_count = len(header_row)
 
 		data_rows = [row for row in all_rows[1:] if any((cell or "").strip() for cell in row)]
