@@ -62,13 +62,33 @@ frappe.ui.form.on("Qima Settings", {
 		});
 	},
 	download_inspections_button(frm) {
-		frm.add_custom_button(__("Get Inspection Report from Qimaone"), function () {});
+		if (!frm.doc.from_date_for_inspection_sync) {
+			frappe.throw(
+				__(
+					frappe.throw(
+						"Please set the From Date for Inspection Sync before downloading the inspection reports."
+					)
+				)
+			);
+			return;
+		}
+		frm.add_custom_button(__("Get Inspection Report from Qimaone"), function () {
+			frappe.call({
+				method: "qimaone_integrations.qimaone_integrations.doctype.qima_settings.api.api.fetch_inspections",
+				freeze: true,
+				freeze_message: __("Fetching Inspection Reports from QIMAOne..."),
+			});
+		});
 	},
 	create_product_button(frm) {
 		frm.add_custom_button(__("Create Product in QIMAone"), function () {
 			if (!frm.doc.default_qima_uom) {
 				frappe.throw(
-					__(frappe.throw("Please set the Default QIMA UOM before creating the Product."))
+					__(
+						frappe.throw(
+							"Please set the Default QIMA UOM before creating the Product."
+						)
+					)
 				);
 			}
 			frappe.call({

@@ -1,7 +1,7 @@
 {
  "actions": [],
  "allow_rename": 1,
- "creation": "2026-04-01 11:58:21.416283",
+ "creation": "2026-04-13 19:58:04.844653",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
@@ -13,14 +13,15 @@
   "po_import_file_path",
   "product_import_file_path",
   "from_date",
+  "from_date_for_inspection_sync",
   "column_break_fojl",
   "api_token",
   "refresh_token",
   "default_qima_uom",
   "apis_section",
   "refresh_token_url",
+  "fetch_inspection_url",
   "download_inspection_url",
-  "book_inspection_url",
   "column_break_jguj",
   "po_import_url",
   "product_import_url",
@@ -76,11 +77,6 @@
    "fieldname": "download_inspection_url",
    "fieldtype": "Data",
    "label": "Download Inspection URL"
-  },
-  {
-   "fieldname": "book_inspection_url",
-   "fieldtype": "Data",
-   "label": "Book Inspection URL"
   },
   {
    "fieldname": "column_break_jguj",
@@ -159,14 +155,24 @@
   {
    "fieldname": "from_date",
    "fieldtype": "Date",
-   "label": "From Date"
+   "label": "Sync PO after date"
+  },
+  {
+   "fieldname": "from_date_for_inspection_sync",
+   "fieldtype": "Date",
+   "label": "Inspection Sync From Date"
+  },
+  {
+   "fieldname": "fetch_inspection_url",
+   "fieldtype": "Data",
+   "label": "Fetch Inspection URL"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-04-10 18:34:51.278617",
+ "modified": "2026-04-14 02:10:27.582832",
  "modified_by": "Administrator",
  "module": "Qimaone Integrations",
  "name": "Qima Settings",
