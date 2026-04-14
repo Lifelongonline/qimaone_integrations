@@ -5,7 +5,7 @@ import json
 import frappe
 import requests
 from frappe import _
-from frappe.utils import now, nowdate, get_datetime, now_datetime
+from frappe.utils import get_datetime, now, now_datetime, nowdate
 
 
 @frappe.whitelist()
@@ -55,11 +55,21 @@ def append_draft_inspections_to_csv():
 	# adding unit column because there is no mapping of this field but it is required in csv for import api, so we are adding it manually in both qima_columns and erp_fields list.
 	qima_columns = [row.qimaone for row in mappings] + ["UNIT"]
 	erp_fields = [row.erp for row in mappings]
-	supplier_mapping = [row.erp_supplier for row in qima_settings.qimaone_overlap if row.erp_supplier and row.qimaone_supplier]
+	supplier_mapping = [
+		row.erp_supplier for row in qima_settings.qimaone_overlap if row.erp_supplier and row.qimaone_supplier
+	]
 
 	inspections = frappe.get_all(
 		"Quality Inspection",
-		filters={"docstatus": 0, "custom_domestic_supplier": 1, "supplier": ["in", supplier_mapping],"creation": ["between", [get_datetime(qima_settings.from_date), now_datetime()]] },
+		filters={
+			"docstatus": 0,
+			"custom_domestic_supplier": 1,
+			"supplier": ["in", supplier_mapping],
+			"creation": [
+				"between",
+				[get_datetime(qima_settings.from_date), now_datetime()],
+			],
+		},
 		fields=erp_fields,
 	)
 	if not inspections:
@@ -176,7 +186,6 @@ def product_uploads():
 
 	token = qima_settings.refresh_token
 	po_import_url = qima_settings.product_import_url
-	unit = qima_settings.default_qima_uom
 	file_path = qima_settings.product_import_file_path
 
 	def normalize(value):
@@ -200,7 +209,7 @@ def product_uploads():
 		barcode = frappe.get_all(
 			"Item Barcode",
 			filters={"barcode_type": "EAN", "parent": row.item_name},
-			fields= ["barcode"]
+			fields=["barcode"],
 		)
 		if barcode:
 			row["GTIN"] = barcode[0].get("barcode")
@@ -215,7 +224,7 @@ def product_uploads():
 		if not all_rows:
 			frappe.throw("CSV template is empty")
 
-		header_row = qima_columns + ["GTIN"]
+		header_row = [*qima_columns, "GTIN"]
 		col_count = len(header_row)
 
 		data_rows = [row for row in all_rows[1:] if any((cell or "").strip() for cell in row)]
@@ -247,6 +256,7 @@ def product_uploads():
 	except Exception as e:
 		frappe.throw(_(f"Error processing CSV file: {e}"))
 
+
 def create_product_on_qima(token, url, file):
 	"""Call the QIMAOne import API with the generated CSV file."""
 	payload = {}
@@ -254,3 +264,86 @@ def create_product_on_qima(token, url, file):
 	headers = {"Authorization": f"Bearer {token}"}
 	response = requests.request("POST", url, headers=headers, data=payload, files=files)
 	create_qima_logs("Product Imports", response)
+
+
+@frappe.whitelist()
+def fetch_inspections():
+	"""Fetch inspection reports from QIMAOne and create corresponding documents in ERPNext."""
+	qima_settings = frappe.get_single("Qima Settings")
+	token = qima_settings.refresh_token
+	url = qima_settings.fetch_inspection_url
+	from_date = qima_settings.from_date_for_inspection_sync
+	download_url = qima_settings.download_inspection_url
+
+	headers = {"Authorization": f"Bearer {token}"}
+	response = requests.request("GET", url, headers=headers)
+
+	if response.status_code == 200:
+		create_qima_logs("Quality Inspection Report", response)
+		data = response.json()
+		download_and_attach_inspection_report(download_url, token, from_date, data)
+	else:
+		frappe.throw(
+			f"Failed to fetch inspection reports from QIMAOne API: {response.status_code} - {response.text}"
+		)
+
+
+def download_and_attach_inspection_report(url, token, from_date, data):
+	"""Download a specific inspection report from QIMAOne and attach it to the corresponding Quality Inspection document in ERPNext."""
+	from frappe.utils import getdate
+
+	filtered_data = {}
+	for item in data.get("content", []):
+		inspection_date = item.get("inspectionDate")
+		if (
+			inspection_date
+			and inspection_date >= getdate(from_date).strftime("%Y-%m-%d")
+			and item.get("status") == "PENDING"
+			and item.get("inspectionResult") == "PASS"
+		):
+			filtered_data[item.get("id")] = item
+
+	headers = {"Authorization": f"Bearer {token}"}
+	response = requests.request("GET", url, headers=headers)
+
+	for row in filtered_data.values():
+		inspection_id = row.get("id")
+		product_qty = row.get("productQuantity")
+		po_ref = row.get("purchaseOrderReference")
+		download_url = row.get("links")[0].get("href")
+
+		qc_id = frappe.db.get_value(
+			"Quality Inspection",
+			{"name": po_ref, "remaining_qty": product_qty},
+			"name",
+		)
+		if qc_id:
+			response = requests.request("GET", download_url, headers=headers)
+			if response.status_code == 200:
+				create_qima_logs("Download Inspection Report", response)
+				file_content = response.content
+				attach_report_to_qc(qc_id, inspection_id, file_content)
+			else:
+				frappe.throw(
+					f"Failed to download inspection report from QIMAOne API: {response.status_code} - {response.text}"
+				)
+
+
+def attach_report_to_qc(qc_id, inspection_id, file_content):
+	"""Attach the downloaded inspection report to the corresponding Quality Inspection document in ERPNext."""
+	import base64
+
+	file_name = f"QIMA_Inspection_Report_{inspection_id}.pdf"
+	encoded_file = base64.b64encode(file_content).decode("utf-8")
+
+	file_doc = frappe.get_doc(
+		{
+			"doctype": "File",
+			"file_name": file_name,
+			"attached_to_doctype": "Quality Inspection",
+			"attached_to_name": qc_id,
+			"content": encoded_file,
+			"decode": True,
+		}
+	)
+	file_doc.insert(ignore_permissions=True)
