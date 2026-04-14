@@ -298,13 +298,15 @@ def download_and_attach_inspection_report(url, token, from_date, data):
 		if (
 			inspection_date
 			and inspection_date >= getdate(from_date).strftime("%Y-%m-%d")
-			and item.get("status") == "PENDING"
+			and item.get("status") == "COMPLETED"
 			and item.get("inspectionResult") == "PASS"
 		):
 			filtered_data[item.get("id")] = item
 
 	headers = {"Authorization": f"Bearer {token}"}
 	response = requests.request("GET", url, headers=headers)
+
+	print(response)
 
 	for row in filtered_data.values():
 		inspection_id = row.get("id")
@@ -332,7 +334,7 @@ def download_and_attach_inspection_report(url, token, from_date, data):
 def attach_report_to_qc(qc_id, inspection_id, file_content):
 	"""Attach the downloaded inspection report to the corresponding Quality Inspection document in ERPNext."""
 	import base64
-
+	print(f"Attaching report to QC {qc_id} for inspection {inspection_id}")
 	file_name = f"QIMA_Inspection_Report_{inspection_id}.pdf"
 	encoded_file = base64.b64encode(file_content).decode("utf-8")
 
