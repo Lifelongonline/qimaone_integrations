@@ -151,7 +151,7 @@ def create_qima_logs(title, message):
 	"""Create logs for QIMAOne API interactions."""
 	log = frappe.new_doc("QIMA Logs")
 	log.status = message.status_code
-	log.response_message = message.text
+	log.response_message = message.text if title != "Download Inspection Report" else ""
 	log.status_code = message.status_code
 	log.title = title
 	log.created_on = now()
@@ -273,7 +273,6 @@ def fetch_inspections():
 	token = qima_settings.refresh_token
 	url = qima_settings.fetch_inspection_url
 	from_date = qima_settings.from_date_for_inspection_sync
-	download_url = qima_settings.download_inspection_url
 
 	headers = {"Authorization": f"Bearer {token}"}
 	response = requests.request("GET", url, headers=headers)
@@ -281,14 +280,14 @@ def fetch_inspections():
 	if response.status_code == 200:
 		create_qima_logs("Quality Inspection Report", response)
 		data = response.json()
-		download_and_attach_inspection_report(download_url, token, from_date, data)
+		download_and_attach_inspection_report(token, from_date, data)
 	else:
 		frappe.throw(
 			f"Failed to fetch inspection reports from QIMAOne API: {response.status_code} - {response.text}"
 		)
 
 
-def download_and_attach_inspection_report(url, token, from_date, data):
+def download_and_attach_inspection_report(token, from_date, data):
 	"""Download a specific inspection report from QIMAOne and attach it to the corresponding Quality Inspection document in ERPNext."""
 	from frappe.utils import getdate
 
@@ -299,53 +298,76 @@ def download_and_attach_inspection_report(url, token, from_date, data):
 			inspection_date
 			and inspection_date >= getdate(from_date).strftime("%Y-%m-%d")
 			and item.get("status") == "COMPLETED"
-			and item.get("inspectionResult") == "PASS"
 		):
 			filtered_data[item.get("id")] = item
 
 	headers = {"Authorization": f"Bearer {token}"}
-	response = requests.request("GET", url, headers=headers)
-
-	print(response)
-
 	for row in filtered_data.values():
-		inspection_id = row.get("id")
-		product_qty = row.get("productQuantity")
-		po_ref = row.get("purchaseOrderReference")
-		download_url = row.get("links")[0].get("href")
-
-		qc_id = frappe.db.get_value(
-			"Quality Inspection",
-			{"name": po_ref, "remaining_qty": product_qty},
-			"name",
+		frappe.enqueue(
+			download_and_attach_report_to_qc,
+			row=row,
+			headers=headers,
+			queue="long",
+			timeout=1800,
+			job_name="Download Inspection Report",
+			enqueue_after_commit=True,
 		)
-		if qc_id:
-			response = requests.request("GET", download_url, headers=headers)
-			if response.status_code == 200:
-				create_qima_logs("Download Inspection Report", response)
-				file_content = response.content
-				attach_report_to_qc(qc_id, inspection_id, file_content)
-			else:
-				frappe.throw(
-					f"Failed to download inspection report from QIMAOne API: {response.status_code} - {response.text}"
-				)
+	frappe.msgprint(f"{len(filtered_data)} Inspection report download has been queued.")
 
 
-def attach_report_to_qc(qc_id, inspection_id, file_content):
+def download_and_attach_report_to_qc(row, headers):
 	"""Attach the downloaded inspection report to the corresponding Quality Inspection document in ERPNext."""
-	import base64
-	print(f"Attaching report to QC {qc_id} for inspection {inspection_id}")
-	file_name = f"QIMA_Inspection_Report_{inspection_id}.pdf"
-	encoded_file = base64.b64encode(file_content).decode("utf-8")
 
-	file_doc = frappe.get_doc(
-		{
-			"doctype": "File",
-			"file_name": file_name,
-			"attached_to_doctype": "Quality Inspection",
-			"attached_to_name": qc_id,
-			"content": encoded_file,
-			"decode": True,
-		}
+	def attach_report_to_qc(qc_id, inspection_id, file_content, product_qty, inspection_result):
+		import base64
+
+		file_name = f"QIMA_Inspection_Report_{inspection_id}.pdf"
+		encoded_file = base64.b64encode(file_content).decode("utf-8")
+
+		# update quality inspection
+		qc_doc = frappe.get_doc("Quality Inspection", qc_id)
+		qc_doc.remaining_qty = product_qty
+		qc_doc.rejected_qty = qc_doc.custom_offered_qty - product_qty
+		mode_of_assembly = frappe.db.get_value("Owner", {"parent": qc_doc.item_code}, "mode_of_assembly")
+		qc_doc.custom_mode_of_assembly = mode_of_assembly
+		qc_doc.save(ignore_permissions=True)
+
+		if inspection_result == "PASS":
+			qc_doc.db_set("status", "Accepted")
+
+		file_doc = frappe.get_doc(
+			{
+				"doctype": "File",
+				"file_name": file_name,
+				"attached_to_doctype": "Quality Inspection",
+				"attached_to_name": qc_id,
+				"content": encoded_file,
+				"decode": True,
+			}
+		)
+		file_doc.insert(ignore_permissions=True)
+
+	# for row in filtered_data:
+	inspection_id = row.get("id")
+	inspection_result = row.get("inspectionResult")
+	product_qty = row.get("productQty")
+	po_ref = row.get("purchaseOrderReference")
+	download_url = row.get("links")[0].get("href")
+
+	qc_id = frappe.db.get_value(
+		"Quality Inspection",
+		po_ref,
+		"name",
 	)
-	file_doc.insert(ignore_permissions=True)
+
+	if qc_id:
+		response = requests.request("GET", download_url, headers=headers)
+		if response.status_code == 200:
+			file_content = response.content
+			# attach the downloaded inspection report to relevant quality inspection and also update the QC
+			attach_report_to_qc(qc_id, inspection_id, file_content, product_qty, inspection_result)
+			create_qima_logs("Download Inspection Report", response)
+		else:
+			frappe.throw(
+				f"Failed to download inspection report from QIMAOne API: {response.status_code} - {response.text}"
+			)
