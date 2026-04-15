@@ -331,6 +331,7 @@ def download_and_attach_report_to_qc(row, headers):
 		mode_of_assembly = frappe.db.get_value("Owner", {"parent": qc_doc.item_code}, "mode_of_assembly")
 		qc_doc.custom_mode_of_assembly = mode_of_assembly
 		qc_doc.save(ignore_permissions=True)
+		qc_doc.submit()
 
 		if inspection_result == "PASS":
 			qc_doc.db_set("status", "Accepted")
