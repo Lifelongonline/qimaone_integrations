@@ -5,7 +5,7 @@ import json
 import frappe
 import requests
 from frappe import _
-from frappe.utils import get_datetime, now, now_datetime, nowdate
+from frappe.utils import get_datetime, getdate, now, now_datetime, nowdate
 
 
 @frappe.whitelist()
@@ -75,6 +75,7 @@ def append_draft_inspections_to_csv():
 	if not inspections:
 		frappe.throw(_("No inspection found."))
 	for row in inspections:
+		row["custom_actual_qc_date"] = getdate(row.get("custom_actual_qc_date"))
 		row["UNIT"] = unit
 
 	erp_fields.extend(["UNIT"])
