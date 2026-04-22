@@ -344,11 +344,10 @@ def download_and_attach_report_to_qc(row, headers):
 		mode_of_assembly = frappe.db.get_value("Owner", {"parent": qc_doc.item_code}, "mode_of_assembly")
 		qc_doc.custom_mode_of_assembly = mode_of_assembly
 		qc_doc.flags.ignore_validate_update_after_submit = True
+		if inspection_result == "PASS":
+			qc_doc.status = "Accepted"
 		qc_doc.save(ignore_permissions=True)
 		qc_doc.submit()
-
-		if inspection_result == "PASS":
-			qc_doc.db_set("status", "Accepted")
 
 		file_doc = frappe.get_doc(
 			{
@@ -371,7 +370,7 @@ def download_and_attach_report_to_qc(row, headers):
 
 	qc_id = frappe.db.get_value(
 		"Quality Inspection",
-		po_ref,
+		{"name": po_ref, "docstatus": 0, "custom_domestic_supplier": 1},
 		"name",
 	)
 
