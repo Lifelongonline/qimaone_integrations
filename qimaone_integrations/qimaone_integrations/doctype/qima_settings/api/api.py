@@ -5,7 +5,7 @@ import json
 import frappe
 import requests
 from frappe import _
-from frappe.utils import get_datetime, getdate, now, now_datetime, nowdate
+from frappe.utils import cint, flt, get_datetime, getdate, now, now_datetime, nowdate
 
 
 @frappe.whitelist()
@@ -274,8 +274,19 @@ def fetch_inspections():
 	token = qima_settings.refresh_token
 	url = qima_settings.fetch_inspection_url
 	from_date = qima_settings.from_date_for_inspection_sync
-
-	headers = {"Authorization": f"Bearer {token}"}
+	count = frappe.db.get_value(
+		"Quality Inspection",
+		{
+			"docstatus": 0,
+			"custom_domestic_supplier": 1,
+			"creation": [
+				"between",
+				[get_datetime(qima_settings.from_date), now_datetime()],
+			],
+		},
+		"count(*)",
+	)
+	headers = {"Authorization": f"Bearer {token}", "size": str(cint(count) + 10)}
 	response = requests.request("GET", url, headers=headers)
 
 	if response.status_code == 200:
@@ -331,6 +342,7 @@ def download_and_attach_report_to_qc(row, headers):
 		qc_doc.rejected_qty = qc_doc.custom_offered_qty - product_qty
 		mode_of_assembly = frappe.db.get_value("Owner", {"parent": qc_doc.item_code}, "mode_of_assembly")
 		qc_doc.custom_mode_of_assembly = mode_of_assembly
+		qc_doc.flags.ignore_validate_update_after_submit = True
 		qc_doc.save(ignore_permissions=True)
 		qc_doc.submit()
 
@@ -352,7 +364,7 @@ def download_and_attach_report_to_qc(row, headers):
 	# for row in filtered_data:
 	inspection_id = row.get("id")
 	inspection_result = row.get("inspectionResult")
-	product_qty = row.get("productQty")
+	product_qty = flt(row.get("productQuantity"))
 	po_ref = row.get("purchaseOrderReference")
 	download_url = row.get("links")[0].get("href")
 
