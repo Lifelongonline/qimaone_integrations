@@ -286,8 +286,9 @@ def fetch_inspections():
 		},
 		"count(*)",
 	)
-	headers = {"Authorization": f"Bearer {token}", "size": str(cint(count) + 10)}
-	response = requests.request("GET", url, headers=headers)
+	headers = {"Authorization": f"Bearer {token}"}
+	payload = {"size": str(cint(count) + 10)}
+	response = requests.request("GET", url, headers=headers, params=payload)
 
 	if response.status_code == 200:
 		create_qima_logs("Quality Inspection Report", response)
