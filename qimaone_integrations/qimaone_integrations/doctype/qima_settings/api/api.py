@@ -343,9 +343,10 @@ def download_and_attach_report_to_qc(row, headers):
 		qc_doc.rejected_qty = qc_doc.custom_offered_qty - product_qty
 		mode_of_assembly = frappe.db.get_value("Owner", {"parent": qc_doc.item_code}, "mode_of_assembly")
 		qc_doc.custom_mode_of_assembly = mode_of_assembly
-		qc_doc.flags.ignore_validate_update_after_submit = True
 		if inspection_result == "PASS":
 			qc_doc.status = "Accepted"
+
+		frappe.log_error("qc_doc", qc_doc.as_dict())
 		qc_doc.save(ignore_permissions=True)
 		qc_doc.submit()
 
