@@ -362,6 +362,7 @@ def download_and_attach_report_to_qc(row, headers):
 			}
 		)
 		file_doc.insert(ignore_permissions=True)
+		qc_doc.attach_qi_doc = file_doc.file_url
 
 	# for row in filtered_data:
 	inspection_id = row.get("id")
