@@ -358,6 +358,7 @@ def download_and_attach_report_to_qc(row, headers):
 				"attached_to_name": qc_id,
 				"content": encoded_file,
 				"decode": True,
+				"attached_to_field": "attach_qi_doc",
 			}
 		)
 		file_doc.insert(ignore_permissions=True)
