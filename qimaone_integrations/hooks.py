@@ -1,7 +1,7 @@
 app_name = "qimaone_integrations"
 app_title = "Qimaone Integrations"
 app_publisher = "gopal@8848digital.com"
-app_description = "Push PO and products in Qimaone"
+app_description = "Push PO and products in Qimaone"
 app_email = "gopal@8848digital.com"
 app_license = "mit"
 
@@ -46,6 +46,7 @@ after_migrate = "qimaone_integrations.migrate.after_migrate"
 
 # include js in doctype views
 # doctype_js = {"doctype" : "public/js/doctype.js"}
+doctype_js = {"Quality Request": "myqima/customizations/quality_request/quality_request.js"}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
@@ -243,4 +244,3 @@ after_migrate = "qimaone_integrations.migrate.after_migrate"
 # default_log_clearing_doctypes = {
 # 	"Logging DocType Name": 30  # days to retain logs
 # }
-

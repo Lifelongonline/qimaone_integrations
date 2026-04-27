@@ -91,7 +91,12 @@ def get_valid_token():
 
 	now = datetime.now()
 
-	buffer_time = settings.token_expiry - timedelta(minutes=10)
+	# Parse string → datetime if Frappe returns it as a string
+	token_expiry = settings.token_expiry
+	if isinstance(token_expiry, str):
+		token_expiry = datetime.strptime(token_expiry[:19], "%Y-%m-%d %H:%M:%S")
+
+	buffer_time = token_expiry - timedelta(minutes=10)
 
 	if now >= buffer_time:
 		try:

@@ -1,0 +1,11 @@
+{
+    "Supplier": [
+        {
+            "fieldname": "custom_myqima_sync_status",
+            "label": "MyQima Sync Status",
+            "fieldtype": "Check",
+            "default": "0",
+            "insert_after": "custom_myqima_supplier_id"
+        }      
+    ]
+}

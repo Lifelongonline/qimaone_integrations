@@ -10,6 +10,7 @@
   "referer",
   "account",
   "password",
+  "userid",
   "column_break_hahq",
   "access_token",
   "refresh_key",
@@ -75,13 +76,18 @@
   {
    "fieldname": "column_break_hahq",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "userid",
+   "fieldtype": "Data",
+   "label": "UserId"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-04-14 17:43:35.366231",
+ "modified": "2026-04-27 12:59:08.233073",
  "modified_by": "Administrator",
  "module": "myqima",
  "name": "MyQima Settings",
