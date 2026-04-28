@@ -13,16 +13,10 @@
             "label": "MyQima Order Number"
         },
         {
-            "fieldname": "custom_create_inspection",
-            "fieldtype": "Button",
-            "label": "Create Inspection",
-            "insert_after": "custom_myqima_order_number"
-        },
-        {
             "fieldname": "custom_myqima_inspection_created",
             "fieldtype": "Check",
             "label": "MYqima Inspection Created",
-            "insert_after": "custom_create_inspection"
+            "insert_after": "custom_myqima_order_number"
         },
         {
             "fieldname": "custom_myqima_product_id",
