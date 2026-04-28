@@ -34,32 +34,20 @@ frappe.ui.form.on("Quality Request Item", {
 					callback: function (r) {
 						frappe.dom.unfreeze();
 
-						if (r.exc) {
-							return;
-						}
+						if (r.exc) return;
 
 						const booking_id = r.message?.booking_id;
 						const order_number = r.message?.order_number;
 
-						// Update child row fields locally — no page reload needed
-						frappe.model.set_value(cdt, cdn, "custom_myqima_booking_id", booking_id);
-						frappe.model.set_value(
-							cdt,
-							cdn,
-							"custom_myqima_order_number",
-							order_number
-						);
-						frappe.model.set_value(cdt, cdn, "custom_myqima_inspection_created", 1);
-
-						frm.refresh_field("quality_request_item");
-
-						frappe.msgprint({
-							title: "Inspection Booked",
-							message: `
-								<b>Order Number:</b> ${order_number}<br>
-								<b>Order ID:</b> ${booking_id}
-							`,
-							indicator: "green",
+						frm.reload_doc().then(() => {
+							frappe.msgprint({
+								title: "Inspection Booked",
+								message: `
+									<b>Order Number:</b> ${order_number}<br>
+									<b>Order ID:</b> ${booking_id}
+								`,
+								indicator: "green",
+							});
 						});
 					},
 					error: function () {
