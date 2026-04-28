@@ -213,3 +213,95 @@ def _safe_json(response):
 		return response.json()
 	except Exception:
 		return response.text
+
+
+@frappe.whitelist()
+def cancel_inspection_booking(
+	quality_inspection_name, reason="Customer requested cancellation", reason_options=""
+):
+	"""
+	Called from the 'Cancel QIMA Inspection' button on Quality Inspection form.
+
+	Args:
+		quality_inspection_name (str): name of the Quality Inspection doc
+		reason (str): cancellation reason (required by QIMA)
+		reason_options (str): cancellation reason detail (optional)
+
+	Returns:
+		dict: { "success": True }
+	"""
+	doc = frappe.get_doc("Quality Inspection", quality_inspection_name)
+
+	if not doc.custom_myqima_inspection_created:
+		frappe.throw("No QIMA inspection booking found for this document.")
+
+	if not doc.custom_myqima_booking_id:
+		frappe.throw("Booking ID is missing. Cannot cancel.")
+
+	settings = frappe.get_single("MyQima Settings")
+	token = get_valid_token()
+
+	if isinstance(token, dict):
+		token = token.get("content", {}).get("token", {}).get("token", "")
+
+	headers = {
+		"Content-Type": "application/json",
+		"Ai-Api-Access-Token": settings.api_key,
+		"Referer": settings.referer,
+		"Authorization": f"Bearer {token}",
+		"Connection": "keep-alive",
+	}
+
+	_delete_inspection(settings, headers, doc, reason, reason_options)
+
+	frappe.db.set_value(
+		"Quality Inspection",
+		quality_inspection_name,
+		{
+			"custom_myqima_inspection_created": 0,
+			"custom_myqima_booking_id": "",
+			"custom_myqima_order_number": "",
+			"custom_myqima_product_id": "",
+		},
+		update_modified=False,
+	)
+
+	frappe.db.commit()
+
+	return {"success": True}
+
+
+def _delete_inspection(settings, headers, doc, reason, reason_options=""):
+	"""DELETE /v1.0/inspection/{userId}/{orderId}?reason=..."""
+	params = {"reason": reason}
+	if reason_options:
+		params["reason_options"] = reason_options
+
+	url = f"{settings.base_url}/user/{settings.userid}/inspection/{doc.custom_myqima_booking_id}"
+
+	frappe.log_error(
+		f"DELETE {url} | params: {params}",
+		f"[QIMA] Cancel request for Quality Inspection {doc.name}",
+	)
+
+	try:
+		response = requests.delete(url, headers=headers, params=params, json={}, timeout=30)
+	except requests.exceptions.RequestException as exc:
+		frappe.throw(f"[QIMA] Network error while cancelling booking:<br>{exc}")
+
+	frappe.log_error(
+		json.dumps(
+			{"status_code": response.status_code, "body": _safe_json(response)},
+			indent=2,
+		),
+		f"[QIMA] Cancel Response for Quality Inspection {doc.name}",
+	)
+
+	if not response.ok:
+		frappe.throw(
+			f"[QIMA] Cancellation failed.<br>"
+			f"Status: {response.status_code}<br>"
+			f"Response: {response.text}"
+		)
+
+	frappe.logger().info(f"[QIMA] Booking cancelled — Order ID: {doc.custom_myqima_booking_id}")
