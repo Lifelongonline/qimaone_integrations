@@ -22,10 +22,12 @@
   "refresh_token_url",
   "fetch_inspection_url",
   "download_inspection_url",
+  "po_fetch_url",
   "column_break_jguj",
   "po_import_url",
   "product_import_url",
   "process_status_url",
+  "po_cancel_url",
   "section_break_hxod",
   "qimaone_item_map",
   "qimaone_supplier_map",
@@ -166,13 +168,23 @@
    "fieldname": "fetch_inspection_url",
    "fieldtype": "Data",
    "label": "Fetch Inspection URL"
+  },
+  {
+   "fieldname": "po_cancel_url",
+   "fieldtype": "Data",
+   "label": "PO Cancel URL"
+  },
+  {
+   "fieldname": "po_fetch_url",
+   "fieldtype": "Data",
+   "label": "PO Fetch URL"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-04-14 02:10:27.582832",
+ "modified": "2026-05-05 16:09:08.401549",
  "modified_by": "Administrator",
  "module": "Qimaone Integrations",
  "name": "Qima Settings",
