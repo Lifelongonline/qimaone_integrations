@@ -140,13 +140,12 @@ doctype_js = {"Quality Inspection": "myqima/customizations/quality_inspection/qu
 # ---------------
 # Hook on document methods and events
 
-# doc_events = {
-# 	"*": {
-# 		"on_update": "method",
-# 		"on_cancel": "method",
-# 		"on_trash": "method"
-# 	}
-# }
+doc_events = {
+	"Quality Inspection": {
+		"on_cancel": "qimaone_integrations.qimaone_integrations.customizations.quality_inspection.quality_inspection.on_cancel",
+		"on_trash": "qimaone_integrations.qimaone_integrations.customizations.quality_inspection.quality_inspection.on_trash",
+	}
+}
 
 # Scheduled Tasks
 # ---------------
