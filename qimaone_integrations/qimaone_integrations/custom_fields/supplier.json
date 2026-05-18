@@ -6,6 +6,13 @@
             "fieldtype": "Check",
             "default": "0",
             "insert_after": "custom_myqima_supplier_id"
-        }      
+        },      
+        {
+            "fieldname": "custom_myqima_supplier_code",
+            "label": "MyQima Supplier Code",
+            "fieldtype": "Data",
+            "read_only": 1,
+            "insert_after": "custom_myqima_sync_status"
+        }
     ]
 }
