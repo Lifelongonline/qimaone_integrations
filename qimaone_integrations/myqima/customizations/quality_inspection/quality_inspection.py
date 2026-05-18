@@ -82,6 +82,13 @@ def _build_payload(doc, settings):
 
 	service_date = _fmt_date(_get_service_date(doc.report_date))
 
+	supplier_code = frappe.db.get_value("Supplier", doc.supplier, "custom_myqima_supplier_code")
+	if not supplier_code:
+		frappe.throw(
+			f"MyQima Supplier Code is missing for supplier <b>{doc.supplier}</b>. "
+			f"Please sync the supplier before creating an inspection booking."
+		)
+
 	return {
 		"userId": settings.userid or "",
 		"serviceDate": service_date,
@@ -89,7 +96,7 @@ def _build_payload(doc, settings):
 		"serviceType": "1",
 		"bookingType": "General",
 		"referenceNumber": doc.reference_name or "",
-		"supplierCode": doc.supplier or "",
+		"supplierCode": supplier_code,
 		"products": [
 			{
 				"name": doc.item_name,
