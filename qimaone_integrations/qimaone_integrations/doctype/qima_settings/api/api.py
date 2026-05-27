@@ -331,7 +331,7 @@ def download_and_attach_inspection_report(token, from_date, data):
 def download_and_attach_report_to_qc(row, headers):
 	"""Attach the downloaded inspection report to the corresponding Quality Inspection document in ERPNext."""
 
-	def attach_report_to_qc(qc_id, inspection_id, file_content, product_qty, inspection_result):
+	def attach_report_to_qc(qc_id, inspection_id, file_content, product_qty, inspection_result, report_decision):
 		import base64
 
 		file_name = f"QIMA_Inspection_Report_{inspection_id}.pdf"
@@ -341,9 +341,10 @@ def download_and_attach_report_to_qc(row, headers):
 		qc_doc = frappe.get_doc("Quality Inspection", qc_id)
 		qc_doc.remaining_qty = product_qty
 		qc_doc.rejected_qty = qc_doc.custom_offered_qty - product_qty
+		qc_doc.custom_inspection_report_status = report_decision
 		mode_of_assembly = frappe.db.get_value("Owner", {"parent": qc_doc.item_code}, "mode_of_assembly")
 		qc_doc.custom_mode_of_assembly = mode_of_assembly
-		if inspection_result == "PASS":
+		if inspection_result == "COMPLETED":
 			qc_doc.status = "Accepted"
 
 		frappe.log_error("qc_doc", qc_doc.as_dict())
@@ -366,7 +367,8 @@ def download_and_attach_report_to_qc(row, headers):
 
 	# for row in filtered_data:
 	inspection_id = row.get("id")
-	inspection_result = row.get("inspectionResult")
+	inspection_result = row.get("staus")
+	report_decision = row.get("reportDecision")
 	product_qty = flt(row.get("productQuantity"))
 	po_ref = row.get("purchaseOrderReference")
 	download_url = row.get("links")[0].get("href")
@@ -382,7 +384,7 @@ def download_and_attach_report_to_qc(row, headers):
 		if response.status_code == 200:
 			file_content = response.content
 			# attach the downloaded inspection report to relevant quality inspection and also update the QC
-			attach_report_to_qc(qc_id, inspection_id, file_content, product_qty, inspection_result)
+			attach_report_to_qc(qc_id, inspection_id, file_content, product_qty, inspection_result, report_decision)
 			create_qima_logs("Download Inspection Report", response)
 		else:
 			frappe.throw(
