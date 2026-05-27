@@ -5,6 +5,13 @@
             "fieldtype": "Check",
             "insert_after": "accounting_dimension_check",
             "label": "Synced on QIMAone"
-        }    
+        },
+        {
+            "fieldname": "custom_myqima_item_master",
+            "fieldtype": "Table",
+            "label": "Myqima Item Master",
+            "insert_after": "brand",
+            "options": "Myqima Item Master"
+        }  
     ]
 }
