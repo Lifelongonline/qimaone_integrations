@@ -46,7 +46,7 @@ after_migrate = "qimaone_integrations.migrate.after_migrate"
 
 # include js in doctype views
 # doctype_js = {"doctype" : "public/js/doctype.js"}
-doctype_js = {"Quality Inspection": "myqima/customizations/quality_inspection/quality_inspection.js"}
+# doctype_js = {"Quality Inspection": "myqima/customizations/quality_inspection/quality_inspection.js"}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
