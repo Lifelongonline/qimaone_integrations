@@ -31,7 +31,8 @@
   "section_break_hxod",
   "qimaone_item_map",
   "qimaone_supplier_map",
-  "qimaone_overlap"
+  "qimaone_overlap",
+  "qimaone_allowed_item_groups"
  ],
  "fields": [
   {
@@ -178,13 +179,19 @@
    "fieldname": "po_fetch_url",
    "fieldtype": "Data",
    "label": "PO Fetch URL"
+  },
+  {
+   "fieldname": "qimaone_allowed_item_groups",
+   "fieldtype": "Table",
+   "label": "Qimaone Allowed item groups",
+   "options": "QIMA Allowed Item Group"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-05-05 16:09:08.401549",
+ "modified": "2026-06-03 01:04:23.709012",
  "modified_by": "Administrator",
  "module": "Qimaone Integrations",
  "name": "Qima Settings",
