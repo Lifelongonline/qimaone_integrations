@@ -5,6 +5,8 @@ import json
 import frappe
 import requests
 from frappe import _
+from frappe.query_builder import DocType
+from frappe.query_builder.functions import Coalesce
 from frappe.utils import cint, flt, get_datetime, getdate, now, now_datetime, nowdate
 
 
@@ -59,21 +61,27 @@ def append_draft_inspections_to_csv():
 		row.erp_supplier for row in qima_settings.qimaone_overlap if row.erp_supplier and row.qimaone_supplier
 	]
 
-	inspections = frappe.get_all(
-		"Quality Inspection",
-		filters={
-			"docstatus": 0,
-			"custom_domestic_supplier": 1,
-			"supplier": ["in", supplier_mapping],
-			"creation": [
-				"between",
-				[get_datetime(qima_settings.from_date), now_datetime()],
-			],
-		},
-		fields=erp_fields,
+	QualityInspection = DocType("Quality Inspection")
+	Item = DocType("Item")
+
+	allowed_groups = [row.item_group for row in qima_settings.qimaone_allowed_item_groups]
+	query = (
+		frappe.qb.from_(QualityInspection)
+		.join(Item)
+		.on(QualityInspection.item_code == Item.name)
+		.select(*(QualityInspection[field] for field in erp_fields))
+		.where(QualityInspection.docstatus == 0)
+		.where(QualityInspection.custom_domestic_supplier == 1)
+		.where(QualityInspection.supplier.isin(supplier_mapping))
+		.where(QualityInspection.creation.between(get_datetime(qima_settings.from_date), now_datetime()))
+		.where(Item.item_group.isin(allowed_groups))
 	)
+
+	inspections = query.run(as_dict=True)
+
 	if not inspections:
 		frappe.throw(_("No inspection found."))
+
 	for row in inspections:
 		row["custom_actual_qc_date"] = getdate(row.get("custom_actual_qc_date"))
 		row["UNIT"] = unit
