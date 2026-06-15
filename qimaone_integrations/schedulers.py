@@ -21,7 +21,9 @@ from qimaone_integrations.qimaone_integrations.doctype.qima_settings.api.api imp
 # Each scheduled sync is driven by a gate field on Qima Settings:
 #   - "hours_field": an Int "no of hours" interval; a run triggers when
 #     (now - last_run) >= configured hours.
-#   - "enabled_field": a Check; the sync runs every dispatch (hourly) while ticked.
+# A job may use either or both. With both, the sync runs on the configured
+# interval only while the checkbox is ticked. With a checkbox but no interval,
+# it runs every dispatch (hourly) while ticked.
 # The last run timestamp is persisted on the settings doc so the interval
 # survives restarts.
 SYNC_JOBS = [
