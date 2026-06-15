@@ -10,10 +10,14 @@ from qimaone_integrations.qimaone_integrations.doctype.qima_settings.api.api imp
 	product_uploads,
 )
 
-# Each scheduled sync is driven by a gate field on Qima Settings:
+# Each scheduled sync is driven by gate fields on Qima Settings:
+#   - "enabled_field": a Check that acts as a master switch; when present and
+#     unticked the sync never runs.
 #   - "hours_field": an Int "no of hours" interval; a run triggers when
 #     (now - last_run) >= configured hours.
-#   - "enabled_field": a Check; the sync runs every dispatch (hourly) while ticked.
+# A job may use either or both. With both, the sync runs on the configured
+# interval only while the checkbox is ticked. With a checkbox but no interval,
+# it runs every dispatch (hourly) while ticked.
 # The last run timestamp is persisted on the settings doc so the interval
 # survives restarts.
 SYNC_JOBS = [
@@ -32,6 +36,7 @@ SYNC_JOBS = [
 	{
 		"label": "QIMAone Item Sync",
 		"enabled_field": "enable_item_sync",
+		"hours_field": "no_of_hours_for_item_sync",
 		"last_run_field": "last_item_sync",
 		"function": product_uploads,
 	},
@@ -41,11 +46,13 @@ SYNC_JOBS = [
 def _is_due(job, settings, now):
 	"""Decide whether a sync job should run on this dispatch."""
 	enabled_field = job.get("enabled_field")
-	if enabled_field:
-		# Checkbox-gated: run every dispatch while the box is ticked.
-		return bool(frappe.utils.cint(settings.get(enabled_field)))
+	if enabled_field and not frappe.utils.cint(settings.get(enabled_field)):
+		# Master switch is off.
+		return False
 
-	hours = frappe.utils.cint(settings.get(job["hours_field"]))
+	hours_field = job.get("hours_field")
+
+	hours = frappe.utils.cint(settings.get(hours_field))
 	if hours <= 0:
 		# Interval not configured / disabled.
 		return False
