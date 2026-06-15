@@ -11,6 +11,7 @@
   "enable_item_sync",
   "no_of_hours_for_item_sync",
   "no_of_hrs_of_item_sync",
+  "enable_item_sync",
   "no_of_hours",
   "no_of_hours_for_reports_sync",
   "po_import_file_path",
@@ -235,14 +236,43 @@
    "default": "0",
    "fieldname": "enable_supplier_validation",
    "fieldtype": "Check",
-   "label": "Enable Supplier Validation"
+   "label": "Enable Supplier Validation",
+  },
+  {
+   "fieldname": "enable_item_sync",
+   "fieldtype": "Check",
+   "label": "Enable Item sync",
+   "default": "0"
+  },
+  {
+   "fieldname": "scheduler_status_section",
+   "fieldtype": "Section Break",
+   "label": "Scheduler Status"
+  },
+  {
+   "fieldname": "last_po_sync",
+   "fieldtype": "Datetime",
+   "label": "Last PO Sync",
+   "read_only": 1
+  },
+  {
+   "fieldname": "last_inspection_sync",
+   "fieldtype": "Datetime",
+   "label": "Last Inspection Sync",
+   "read_only": 1
+  },
+  {
+   "fieldname": "last_item_sync",
+   "fieldtype": "Datetime",
+   "label": "Last Item Sync",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-06-16 17:06:38.560452",
+ "modified": "2026-06-15 17:18:21.219932",
  "modified_by": "Administrator",
  "module": "Qimaone Integrations",
  "name": "Qima Settings",
