@@ -150,23 +150,13 @@ doc_events = {
 # Scheduled Tasks
 # ---------------
 
-# scheduler_events = {
-# 	"all": [
-# 		"qimaone_integrations.tasks.all"
-# 	],
-# 	"daily": [
-# 		"qimaone_integrations.tasks.daily"
-# 	],
-# 	"hourly": [
-# 		"qimaone_integrations.tasks.hourly"
-# 	],
-# 	"weekly": [
-# 		"qimaone_integrations.tasks.weekly"
-# 	],
-# 	"monthly": [
-# 		"qimaone_integrations.tasks.monthly"
-# 	],
-# }
+scheduler_events = {
+	# Runs every hour in the long worker; the dispatcher itself decides which
+	# syncs are due based on the "no of hours" fields in Qima Settings.
+	"hourly_long": [
+		"qimaone_integrations.schedulers.run_scheduled_syncs"
+	],
+}
 
 # Testing
 # -------
