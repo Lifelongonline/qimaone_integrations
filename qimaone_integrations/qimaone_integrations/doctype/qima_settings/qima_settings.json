@@ -9,6 +9,7 @@
   "email_id",
   "password",
   "enable_item_sync",
+  "no_of_hours_for_item_sync",
   "no_of_hours",
   "no_of_hours_for_reports_sync",
   "po_import_file_path",
@@ -196,6 +197,12 @@
    "fieldname": "enable_item_sync",
    "fieldtype": "Check",
    "label": "Enable Item sync"
+  },
+  {
+   "depends_on": "enable_item_sync",
+   "fieldname": "no_of_hours_for_item_sync",
+   "fieldtype": "Int",
+   "label": "No of hrs for QIMAone Item sync (Schedular)"
   },
   {
    "fieldname": "scheduler_status_section",
