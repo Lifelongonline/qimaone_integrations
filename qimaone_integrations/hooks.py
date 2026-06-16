@@ -144,6 +144,7 @@ doc_events = {
 	"Quality Inspection": {
 		"on_cancel": "qimaone_integrations.qimaone_integrations.customizations.quality_inspection.quality_inspection.on_cancel",
 		"on_trash": "qimaone_integrations.qimaone_integrations.customizations.quality_inspection.quality_inspection.on_trash",
+		"validate": "qimaone_integrations.qimaone_integrations.customizations.quality_inspection.quality_inspection.validate",
 	}
 }
 

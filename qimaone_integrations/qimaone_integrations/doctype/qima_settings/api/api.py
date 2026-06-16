@@ -77,6 +77,29 @@ def append_draft_inspections_to_csv():
 		.where(Item.item_group.isin(allowed_groups))
 	)
 
+	query_for_unmapped_suppliers = (
+		frappe.qb.from_(QualityInspection)
+		.join(Item)
+		.on(QualityInspection.item_code == Item.name)
+		.select(QualityInspection.supplier, QualityInspection.name)
+		.where(QualityInspection.docstatus == 0)
+		.where(QualityInspection.custom_domestic_supplier == 1)
+		.where(QualityInspection.supplier.notin(supplier_mapping))
+		.where(QualityInspection.creation.between(get_datetime(qima_settings.from_date), now_datetime()))
+		.where(Item.item_group.isin(allowed_groups))
+	)
+
+	unmapped_suppliers = query_for_unmapped_suppliers.run(as_dict=True)
+	if unmapped_suppliers:
+		message = frappe._dict(
+			{
+				"status_code": 404,
+				"text": f" inspection not synced due to supplier not mapped: {unmapped_suppliers}",
+				"headers": {},
+			}
+		)
+		create_qima_logs("PO Imports", message)
+
 	inspections = query.run(as_dict=True)
 
 	if not inspections:
@@ -159,7 +182,6 @@ def create_po_on_qima(token, url, file):
 def create_qima_logs(title, message):
 	"""Create logs for QIMAOne API interactions."""
 	log = frappe.new_doc("QIMA Logs")
-	log.status = message.status_code
 	log.response_message = message.text if title != "Download Inspection Report" else ""
 	log.status_code = message.status_code
 	log.title = title
@@ -339,7 +361,9 @@ def download_and_attach_inspection_report(token, from_date, data):
 def download_and_attach_report_to_qc(row, headers):
 	"""Attach the downloaded inspection report to the corresponding Quality Inspection document in ERPNext."""
 
-	def attach_report_to_qc(qc_id, inspection_id, file_content, product_qty, inspection_result, report_decision):
+	def attach_report_to_qc(
+		qc_id, inspection_id, file_content, product_qty, inspection_result, report_decision
+	):
 		import base64
 
 		file_name = f"QIMA_Inspection_Report_{inspection_id}.pdf"
@@ -390,7 +414,9 @@ def download_and_attach_report_to_qc(row, headers):
 		if response.status_code == 200:
 			file_content = response.content
 			# attach the downloaded inspection report to relevant quality inspection and also update the QC
-			attach_report_to_qc(qc_id, inspection_id, file_content, product_qty, inspection_result, report_decision)
+			attach_report_to_qc(
+				qc_id, inspection_id, file_content, product_qty, inspection_result, report_decision
+			)
 			create_qima_logs("Download Inspection Report", response)
 		else:
 			frappe.throw(
