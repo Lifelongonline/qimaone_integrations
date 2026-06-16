@@ -375,7 +375,7 @@ def download_and_attach_report_to_qc(row, headers):
 
 	# for row in filtered_data:
 	inspection_id = row.get("id")
-	inspection_result = row.get("staus")
+	inspection_result = row.get("status")
 	report_decision = row.get("reportDecision")
 	product_qty = flt(row.get("productQuantity"))
 	po_ref = row.get("purchaseOrderReference")
