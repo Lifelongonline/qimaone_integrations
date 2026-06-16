@@ -10,12 +10,14 @@
   "password",
   "enable_item_sync",
   "no_of_hours_for_item_sync",
+  "no_of_hrs_of_item_sync",
   "no_of_hours",
   "no_of_hours_for_reports_sync",
   "po_import_file_path",
   "product_import_file_path",
   "from_date",
   "from_date_for_inspection_sync",
+  "enable_supplier_validation",
   "column_break_fojl",
   "api_token",
   "refresh_token",
@@ -156,6 +158,7 @@
    "label": "Product Import File Path"
   },
   {
+   "allow_bulk_edit": 1,
    "fieldname": "qimaone_overlap",
    "fieldtype": "Table",
    "label": "QIMAone Supplier Map",
@@ -187,6 +190,7 @@
    "label": "PO Fetch URL"
   },
   {
+   "allow_bulk_edit": 1,
    "fieldname": "qimaone_allowed_item_groups",
    "fieldtype": "Table",
    "label": "Qimaone Allowed item groups",
@@ -226,13 +230,24 @@
    "fieldtype": "Datetime",
    "label": "Last Item Sync",
    "read_only": 1
+  },
+  {   
+   "fieldname": "no_of_hrs_of_item_sync",
+   "fieldtype": "Int",
+   "label": "No. of hrs of Item sync"
+  },
+  {
+   "default": "0",
+   "fieldname": "enable_supplier_validation",
+   "fieldtype": "Check",
+   "label": "Enable Supplier Validation"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-06-15 17:18:21.219932",
+ "modified": "2026-06-16 17:06:38.560452",
  "modified_by": "Administrator",
  "module": "Qimaone Integrations",
  "name": "Qima Settings",
