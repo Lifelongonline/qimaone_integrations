@@ -355,10 +355,6 @@ def download_and_attach_report_to_qc(row, headers):
 		if inspection_result == "COMPLETED":
 			qc_doc.status = "Accepted"
 
-		frappe.log_error("qc_doc", qc_doc.as_dict())
-		qc_doc.save(ignore_permissions=True)
-		qc_doc.submit()
-
 		file_doc = frappe.get_doc(
 			{
 				"doctype": "File",
@@ -371,8 +367,10 @@ def download_and_attach_report_to_qc(row, headers):
 			}
 		)
 		file_doc.insert(ignore_permissions=True)
-		frappe.db.set_value("Quality Inspection", qc_id, "attach_qi_doc", file_doc.file_url)
 
+		qc_doc.attach_qi_doc = file_doc.file_url
+		qc_doc.save(ignore_permissions=True)
+		qc_doc.submit()
 	# for row in filtered_data:
 	inspection_id = row.get("id")
 	inspection_result = row.get("status")
