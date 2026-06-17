@@ -43,3 +43,16 @@ def cancel_po(data, cancel_url, token):
 			frappe.msgprint(_(f"Failed to cancel PO {po_number} on Qima portal. Response: {response.text}"))
 	else:
 		frappe.msgprint(_({"No matching PO found on Qima portal to cancel."}))
+
+
+def validate_supplier(doc):
+	qima_settings = frappe.get_single("Qima Settings")
+	if not qima_settings.enable_supplier_validation or not doc.custom_domestic_supplier:
+		return
+	mapped_item_groups = [row.item_group for row in qima_settings.qimaone_allowed_item_groups]
+	item_group = frappe.db.get_value("Item", doc.item_code, "item_group")
+	if item_group not in mapped_item_groups:
+		return
+	mapped_suppliers = [row.erp_supplier for row in qima_settings.qimaone_overlap]
+	if doc.supplier not in mapped_suppliers:
+		frappe.throw(_("Supplier is not mapped in Qima Integration."))
