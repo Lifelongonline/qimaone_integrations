@@ -157,6 +157,9 @@ scheduler_events = {
 	"hourly_long": [
 		"qimaone_integrations.schedulers.run_scheduled_syncs"
 	],
+    "daily": [
+		"qimaone_integrations.qimaone_integrations.doctype.qima_settings.api.api.generate_refresh_token"
+	],
 }
 
 # Testing
