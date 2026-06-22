@@ -20,19 +20,14 @@ frappe.ui.form.on("Qima Settings", {
 			}
 			frappe.call({
 				method: "qimaone_integrations.qimaone_integrations.doctype.qima_settings.api.api.generate_refresh_token",
-				args: {
-					doc: frm.doc,
-				},
 				callback: function (r) {
-					const msg = r.message;
+					const msg = r.message == "Success" ? true : false;
 					if (msg) {
-						frm.set_value("refresh_token", msg);
-						frm.save().then(() => {
+							frm.reload_doc();
 							frappe.msgprint(__("Refresh token generated and saved successfully."));
-						});
-					}
-				},
-			});
+						} 
+					},
+				});
 		});
 	},
 	create_po_button(frm) {
