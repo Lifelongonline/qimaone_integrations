@@ -11,22 +11,30 @@ from frappe.utils import cint, flt, get_datetime, getdate, now, now_datetime, no
 
 
 @frappe.whitelist()
-def generate_refresh_token(doc):
+def generate_refresh_token():
 	"""Generate refresh token for QimaOne API."""
-	doc = json.loads(doc)
+	doc = frappe.get_single("Qima Settings")
+	if not doc.email_id or not doc.get_password or not doc.api_token:
+		frappe.throw(
+			_(
+				"Email ID, Password and API Token are required to generate refresh token for QimaOne API"
+			)
+		)
 	try:
 		response = requests.post(
-			doc.get("refresh_token_url"),
+			doc.refresh_token_url,
 			json={
-				"email": doc.get("email_id"),
-				"password": doc.get("password"),
-				"apiToken": doc.get("api_token"),
+				"email": doc.email_id,
+				"password": doc.password,
+				"apiToken": doc.api_token,
 			},
 		)
 		create_qima_logs("Generate Refresh Token", response)
 		if response.status_code == 200:
 			data = response.json()
-			return data.get("id_token")
+			doc.refresh_token = data.get("id_token")
+			doc.save(ignore_permissions=True)
+			return "Success"
 
 		frappe.throw(
 			f"Failed to generate refresh token for QimaOne API: {response.status_code} - {response.text}"
@@ -34,6 +42,7 @@ def generate_refresh_token(doc):
 
 	except Exception as e:
 		frappe.throw(f"Failed to generate refresh token for QimaOne API: {e}")
+
 
 
 @frappe.whitelist()
