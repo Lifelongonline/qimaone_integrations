@@ -166,6 +166,24 @@ scheduler_events = {
 		"qimaone_integrations.qimaone_integrations.doctype.qima_settings.api.api.generate_refresh_token"
 	],
 }
+# scheduler_events = {
+# 	"all": [
+# 		"qimaone_integrations.tasks.all"
+# 	],
+# 	"daily": [
+# 		"qimaone_integrations.tasks.daily"
+# 	],
+# 	"hourly": [
+# 		"qimaone_integrations.tasks.hourly"
+# 	],
+# 	"weekly": [
+# 		"qimaone_integrations.tasks.weekly"
+# 	],
+# 	"monthly": [
+# 		"qimaone_integrations.tasks.monthly"
+# 	],
+# }
+# }
 
 # Testing
 # -------
