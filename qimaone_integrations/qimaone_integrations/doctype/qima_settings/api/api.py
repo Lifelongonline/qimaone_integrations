@@ -349,7 +349,7 @@ def download_and_attach_inspection_report(token, from_date, data):
 		if (
 			inspection_date
 			and inspection_date >= getdate(from_date).strftime("%Y-%m-%d")
-			and item.get("status") == "COMPLETED"
+			and item.get("reportDecision") in ["ACCEPTED", "APPROVED"]
 		):
 			filtered_data[item.get("id")] = item
 
@@ -385,8 +385,8 @@ def download_and_attach_report_to_qc(row, headers):
 		qc_doc.custom_inspection_report_status = report_decision
 		mode_of_assembly = frappe.db.get_value("Owner", {"parent": qc_doc.item_code}, "mode_of_assembly")
 		qc_doc.custom_mode_of_assembly = mode_of_assembly
-		if inspection_result == "COMPLETED":
-			qc_doc.status = "Accepted"
+		qc_doc.status = "Accepted" if inspection_result == "PASS" else "Rejected"
+					
 
 		file_doc = frappe.get_doc(
 			{
@@ -406,7 +406,7 @@ def download_and_attach_report_to_qc(row, headers):
 		qc_doc.submit()
 	# for row in filtered_data:
 	inspection_id = row.get("id")
-	inspection_result = row.get("status")
+	inspection_result = row.get("inspectionResult")
 	report_decision = row.get("reportDecision")
 	product_qty = flt(row.get("productQuantity"))
 	po_ref = row.get("purchaseOrderReference")
