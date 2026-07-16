@@ -380,13 +380,16 @@ def download_and_attach_report_to_qc(row, headers):
 
 		# update quality inspection
 		qc_doc = frappe.get_doc("Quality Inspection", qc_id)
-		qc_doc.remaining_qty = product_qty
-		qc_doc.rejected_qty = qc_doc.custom_offered_qty - product_qty
-		qc_doc.custom_inspection_report_status = report_decision
+		# qc_doc.remaining_qty = product_qty
+		# qc_doc.rejected_qty = qc_doc.custom_offered_qty - product_qty
+		# qc_doc.custom_inspection_report_status = report_decision
 		mode_of_assembly = frappe.db.get_value("Owner", {"parent": qc_doc.item_code}, "mode_of_assembly")
 		qc_doc.custom_mode_of_assembly = mode_of_assembly
-		qc_doc.status = "Accepted" if inspection_result == "PASS" else "Rejected"
-					
+		# if inspection_result == "COMPLETED":
+		# 	qc_doc.status = "Accepted"
+
+		qc_doc.save(ignore_permissions=True)
+		qc_doc.submit()
 
 		file_doc = frappe.get_doc(
 			{
