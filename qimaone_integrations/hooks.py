@@ -152,14 +152,14 @@ doc_events = {
 # ---------------
 
 scheduler_events = {
-    "cron": {
-        "* * * * *": [
+	"cron": {
+		"* * * * *": [
 			"qimaone_integrations.schedulers.run_scheduled_syncs"
 		],
 	},
 	# Runs every hour in the long worker; the dispatcher itself decides which
 	# syncs are due based on the "no of hours" fields in Qima Settings.
-    "daily": [
+	"daily": [
 		"qimaone_integrations.qimaone_integrations.doctype.qima_settings.api.api.generate_refresh_token"
 	],
 }
