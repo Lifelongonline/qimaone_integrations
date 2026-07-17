@@ -153,9 +153,6 @@ doc_events = {
 
 scheduler_events = {
     "cron": {
-		"0 */6 * * *": [
-			"qimaone_integrations.myqima.customizations.quality_inspection.cron_job.sync_qima_reports"
-		],
         "* * * * *": [
 			"qimaone_integrations.schedulers.run_scheduled_syncs"
 		],
