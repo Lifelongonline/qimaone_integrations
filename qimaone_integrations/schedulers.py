@@ -13,34 +13,39 @@ from qimaone_integrations.qimaone_integrations.doctype.qima_settings.api.api imp
 # Each scheduled sync is driven by gate fields on Qima Settings:
 #   - "enabled_field": a Check that acts as a master switch; when present and
 #     unticked the sync never runs.
-#   - "hours_field": an Int "no of hours" interval; a run triggers when
-#     (now - last_run) >= configured hours.
+#   - "minutes_field": an Int "no of mins" interval; a run triggers when
+#     (now - last_run) >= configured minutes.
 # A job may use either or both. With both, the sync runs on the configured
 # interval only while the checkbox is ticked. With a checkbox but no interval,
 # it runs every dispatch (hourly) while ticked.
 # The last run timestamp is persisted on the settings doc so the interval
 # survives restarts.
-SYNC_JOBS = [
-	{
-		"label": "QIMAone PO Sync",
-		"minutes_field": "no_of_hours",
-		"last_run_field": "last_po_sync",
-		"function": append_draft_inspections_to_csv,
-	},
-	{
-		"label": "QIMAone Inspection Sync",
-		"minutes_field": "no_of_hours_for_reports_sync",
-		"last_run_field": "last_inspection_sync",
-		"function": fetch_inspections,
-	},
-	{
-		"label": "QIMAone Item Sync",
-		"enabled_field": "enable_item_sync",
-		"minutes_field": "no_of_hours_for_item_sync",
-		"last_run_field": "last_item_sync",
-		"function": product_uploads,
-	},
-]
+#
+# Quality request booking (PO Sync), Inspection Sync and Item Sync each run
+# on their own dedicated dispatcher below (run_po_sync / run_inspection_sync
+# / run_item_sync), fully independent of one another — each is registered as
+# its own separate scheduler_events entry in hooks.py.
+PO_SYNC_JOB = {
+	"label": "QIMAone PO Sync",
+	"minutes_field": "no_of_hours",
+	"last_run_field": "last_po_sync",
+	"function": append_draft_inspections_to_csv,
+}
+
+INSPECTION_SYNC_JOB = {
+	"label": "QIMAone Inspection Sync",
+	"minutes_field": "no_of_hours_for_reports_sync",
+	"last_run_field": "last_inspection_sync",
+	"function": fetch_inspections,
+}
+
+ITEM_SYNC_JOB = {
+	"label": "QIMAone Item Sync",
+	"enabled_field": "enable_item_sync",
+	"minutes_field": "no_of_hours_for_item_sync",
+	"last_run_field": "last_item_sync",
+	"function": product_uploads,
+}
 
 
 def _is_due(job, settings, now):
@@ -65,19 +70,37 @@ def _is_due(job, settings, now):
 	return True
 
 
-def run_scheduled_syncs():
-	"""Every Minute dispatcher: run each QIMAone sync whose gate condition is met."""
+def _run_job(job, now):
+	try:
+		job["function"]()
+	except Exception:
+		frappe.log_error(frappe.get_traceback(), f"{job['label']} scheduled run failed")
+	finally:
+		# Always advance the timestamp so a failing job doesn't retry every dispatch.
+		frappe.db.set_value("Qima Settings", "Qima Settings", job["last_run_field"], now)
+
+
+def _dispatch(job):
 	settings = frappe.get_single("Qima Settings")
 	now = now_datetime()
 
-	for job in SYNC_JOBS:
-		if not _is_due(job, settings, now):
-			continue
+	if _is_due(job, settings, now):
+		_run_job(job, now)
 
-		try:
-			job["function"]()
-		except Exception:
-			frappe.log_error(frappe.get_traceback(), f"{job['label']} scheduled run failed")
-		finally:
-			# Always advance the timestamp so a failing job doesn't retry every hour.
-			frappe.db.set_value("Qima Settings", "Qima Settings", job["last_run_field"], now)
+
+def run_po_sync():
+	"""Every Minute dispatcher for quality request booking (QIMAone PO Sync),
+	independent of Inspection Sync and Item Sync."""
+	_dispatch(PO_SYNC_JOB)
+
+
+def run_inspection_sync():
+	"""Every Minute dispatcher for QIMAone Inspection Sync, independent of
+	quality request booking (PO Sync) and Item Sync."""
+	_dispatch(INSPECTION_SYNC_JOB)
+
+
+def run_item_sync():
+	"""Every Minute dispatcher for QIMAone Item Sync, independent of quality
+	request booking (PO Sync) and Inspection Sync."""
+	_dispatch(ITEM_SYNC_JOB)

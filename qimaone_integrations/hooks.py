@@ -154,11 +154,15 @@ doc_events = {
 scheduler_events = {
     "cron": {
         "* * * * *": [
-			"qimaone_integrations.schedulers.run_scheduled_syncs"
+			"qimaone_integrations.schedulers.run_po_sync",
+			"qimaone_integrations.schedulers.run_inspection_sync",
+			"qimaone_integrations.schedulers.run_item_sync"
 		],
 	},
-	# Runs every hour in the long worker; the dispatcher itself decides which
-	# syncs are due based on the "no of hours" fields in Qima Settings.
+	# Each dispatcher above runs every minute but self-gates on its own "no of
+	# mins" field in Qima Settings, and is registered as its own separate
+	# entry so quality request booking (PO Sync), Inspection Sync and Item
+	# Sync each run fully independently of one another.
     "daily": [
 		"qimaone_integrations.qimaone_integrations.doctype.qima_settings.api.api.generate_refresh_token"
 	],
