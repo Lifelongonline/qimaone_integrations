@@ -234,9 +234,9 @@ def product_uploads():
 	qima_settings = frappe.get_single("Qima Settings")
 	mappings = [row for row in qima_settings.qimaone_item_map if row.qimaone_item_code and row.erp_item_code]
 
-	# GTIN has no mapping row but is required in the import CSV, so add it manually
-	# to both column lists (same approach as UNIT in append_draft_inspections_to_csv).
-	qima_columns = [row.qimaone_item_code for row in mappings] + ["GTIN"]
+	# GTIN / Pack Size have no mapping row but are required in the import CSV, so add
+	# them manually to both column lists (same approach as UNIT in append_draft_inspections_to_csv).
+	qima_columns = [row.qimaone_item_code for row in mappings] + ["GTIN", "Pack Size"]
 	erp_fields = [row.erp_item_code for row in mappings]
 
 	fetch_fields = list(erp_fields)
@@ -252,15 +252,20 @@ def product_uploads():
 		frappe.throw(_("No products found."))
 
 	for row in products:
-		barcode = frappe.get_all(
-			"Item Barcode",
-			filters={"barcode_type": "EAN", "parent": row.name},
-			fields=["barcode"],
+		barcode = frappe.db.get_value(
+			"Item Barcode", {"barcode_type": "EAN", "parent": row.name}, "barcode"
 		)
 		if barcode:
-			row["GTIN"] = barcode[0].get("barcode")
+			row["GTIN"] = barcode
 
-	erp_fields.append("GTIN")
+		# Pack Size = conversion factor of the "Master Carton" UOM on the Item.
+		pack_size = frappe.db.get_value(
+			"UOM Conversion Detail", {"parent": row.name, "uom": "Master Carton"}, "conversion_factor"
+		)
+		if pack_size:
+			row["Pack Size"] = cint(pack_size)
+
+	erp_fields.extend(["GTIN", "Pack Size"])
 
 	file_doc = frappe.get_doc("File", {"file_url": file_path})
 	abs_path = file_doc.get_full_path()
