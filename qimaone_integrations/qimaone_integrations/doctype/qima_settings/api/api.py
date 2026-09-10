@@ -380,30 +380,21 @@ def download_and_attach_inspection_report(token, from_date, data):
 	frappe.msgprint(f"{len(filtered_data)} Inspection report download has been queued.")
 
 
+
 def download_and_attach_report_to_qc(row, headers):
 	"""Attach the downloaded inspection report to the corresponding Quality Inspection document in ERPNext."""
-
+	from lifelong_automation.lifelong_automation.customizations.quality_inspection.doc_events.utility_functions import auto_create_ocr_reader
 	def attach_report_to_qc(
-		qc_id, inspection_id, file_content, product_qty, inspection_result, report_decision
+		qc_id, inspection_id, file_content, product_qty, inspection_result, report_decision, report_status
 	):
 		import base64
 
 		file_name = f"QIMA_Inspection_Report_{inspection_id}.pdf"
 		encoded_file = base64.b64encode(file_content).decode("utf-8")
 
-		# update quality inspection
-		qc_doc = frappe.get_doc("Quality Inspection", qc_id)
-		# qc_doc.remaining_qty = product_qty
-		# qc_doc.rejected_qty = qc_doc.custom_offered_qty - product_qty
-		qc_doc.custom_inspection_report_status = report_decision
-		mode_of_assembly = frappe.db.get_value("Owner", {"parent": qc_doc.item_code}, "mode_of_assembly")
-		qc_doc.custom_mode_of_assembly = mode_of_assembly
-		# if inspection_result == "COMPLETED":
-		# 	qc_doc.status = "Accepted"
-
-		qc_doc.save(ignore_permissions=True)
-		qc_doc.submit()
-
+		# attach the report first: inserting the File does not write file_url back
+		# on to attach_qi_doc, so the URL has to be set on the quality inspection
+		# by hand and it is only known once the File exists
 		file_doc = frappe.get_doc(
 			{
 				"doctype": "File",
@@ -417,15 +408,30 @@ def download_and_attach_report_to_qc(row, headers):
 		)
 		file_doc.insert(ignore_permissions=True)
 
+		# update quality inspection and submit it in a single write -- submit()
+		# is "docstatus = 1, then save()", so it validates and writes the pending
+		# field changes itself; it takes no arguments, hence the flag below
+		qc_doc = frappe.get_doc("Quality Inspection", qc_id)
+		qc_doc.flags.ignore_permissions = True
+		# qc_doc.remaining_qty = product_qty
+		# qc_doc.rejected_qty = qc_doc.custom_offered_qty - product_qty
+		# qc_doc.custom_inspection_report_status = report_decision
+		mode_of_assembly = frappe.db.get_value("Owner", {"parent": qc_doc.item_code}, "mode_of_assembly")
+		qc_doc.custom_mode_of_assembly = mode_of_assembly
 		qc_doc.attach_qi_doc = file_doc.file_url
-		qc_doc.save(ignore_permissions=True)
-		qc_doc.submit()
+		if report_status == "COMPLETED" and report_decision in ["ACCEPTED", "APPROVED"]:
+			qc_doc.status = "Accepted"
+		else:
+			qc_doc.status = "Rejected"
+		qc_doc.save()
+		auto_create_ocr_reader(qc_doc)
 	# for row in filtered_data:
 	inspection_id = row.get("id")
 	inspection_result = row.get("inspectionResult")
 	report_decision = row.get("reportDecision")
 	product_qty = flt(row.get("productQuantity"))
 	po_ref = row.get("purchaseOrderReference")
+	report_status = row.get("status")
 	download_url = row.get("links")[0].get("href")
 
 	qc_id = frappe.db.get_value(
@@ -440,7 +446,7 @@ def download_and_attach_report_to_qc(row, headers):
 			file_content = response.content
 			# attach the downloaded inspection report to relevant quality inspection and also update the QC
 			attach_report_to_qc(
-				qc_id, inspection_id, file_content, product_qty, inspection_result, report_decision
+				qc_id, inspection_id, file_content, product_qty, inspection_result, report_decision, report_status
 			)
 			create_qima_logs("Download Inspection Report", response)
 		else:
