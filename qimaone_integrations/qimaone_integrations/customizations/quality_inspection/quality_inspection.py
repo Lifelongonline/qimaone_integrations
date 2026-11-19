@@ -1,5 +1,6 @@
 from qimaone_integrations.qimaone_integrations.customizations.quality_inspection.doc_events.utility_functions import (
 	cancel_po_on_qima_portal,
+	set_sap_supplier_sub_code,
 	validate_supplier,
 )
 
@@ -15,3 +16,4 @@ def on_trash(doc, event=None):
 
 def validate(doc, method=None):
 	validate_supplier(doc)
+	set_sap_supplier_sub_code(doc)

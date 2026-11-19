@@ -1,0 +1,134 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-07-09 11:45:02.962792",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "myqima_booking_id",
+  "myqima_order_number",
+  "myqima_product_id",
+  "myqima_inspection_status",
+  "myqima_overall_result",
+  "myqima_report_decision",
+  "myqima_decision_reason",
+  "myqima_report_url",
+  "myqima_inspection_created",
+  "myqima_consolidated",
+  "myqima_booking_cancelled",
+  "myqima_report_fetched",
+  "myqima_decision_pending",
+  "myqima_report_not_applied"
+ ],
+ "fields": [
+  {
+   "fieldname": "myqima_booking_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "MyQima Booking ID"
+  },
+  {
+   "fieldname": "myqima_order_number",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "MyQima Order Number"
+  },
+  {
+   "fieldname": "myqima_product_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "MyQima Product ID"
+  },
+  {
+   "fieldname": "myqima_inspection_status",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "MyQima Inspection Status"
+  },
+  {
+   "fieldname": "myqima_overall_result",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "MyQima Overall Result"
+  },
+  {
+   "fieldname": "myqima_report_decision",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "MyQima Report Decision"
+  },
+  {
+   "description": "Why MyQima decided as it did, e.g. why the SKU was rejected.",
+   "fieldname": "myqima_decision_reason",
+   "fieldtype": "Small Text",
+   "label": "MyQima Decision Reason"
+  },
+  {
+   "fieldname": "myqima_report_url",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "MyQima Report URL",
+   "options": "URL"
+  },
+  {
+   "default": "0",
+   "fieldname": "myqima_inspection_created",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "MyQima Inspection Created"
+  },
+  {
+   "default": "0",
+   "description": "Booked with Push Consolidated Items in MyQima Portal: the inspection's result comes from the report decision of its own SKU.",
+   "fieldname": "myqima_consolidated",
+   "fieldtype": "Check",
+   "label": "MyQima Consolidated"
+  },
+  {
+   "default": "0",
+   "fieldname": "myqima_booking_cancelled",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "MyQima Booking Cancelled"
+  },
+  {
+   "default": "0",
+   "fieldname": "myqima_report_fetched",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "MyQima Report Fetched"
+  },
+  {
+   "default": "0",
+   "description": "The report was fetched before MyQima had a report decision, so it is fetched again until the decision is made.",
+   "fieldname": "myqima_decision_pending",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "MyQima Decision Pending"
+  },
+  {
+   "default": "0",
+   "description": "The report was fetched but could not be applied to the inspection, e.g. an unknown result, a produced quantity above Offered Qty or a failed submit. It is fetched again until it applies.",
+   "fieldname": "myqima_report_not_applied",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "MyQima Report Not Applied"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-11-19 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "myqima",
+ "name": "MyQima Details",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

@@ -56,3 +56,19 @@ def validate_supplier(doc):
 	mapped_suppliers = [row.erp_supplier for row in qima_settings.qimaone_overlap]
 	if doc.supplier not in mapped_suppliers:
 		frappe.throw(_("Supplier is not mapped in Qima Integration."))
+
+
+def set_sap_supplier_sub_code(doc):
+	"""Carry the sub code over from the Quality Request row this inspection was created from.
+
+	create_quality_inspection() in lifelong_dsr_customization stamps
+	custom_quality_request_item on the inspection before inserting it, so the row is
+	already known by the time this runs. Inspections made outside a Quality Request
+	have no row to read from and are left alone.
+	"""
+	if doc.custom_sap_supplier_sub_code or not doc.custom_quality_request_item:
+		return
+
+	doc.custom_sap_supplier_sub_code = frappe.db.get_value(
+		"Quality Request Item", doc.custom_quality_request_item, "custom_sap_supplier_sub_code"
+	)

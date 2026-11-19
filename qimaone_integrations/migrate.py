@@ -7,7 +7,20 @@ from frappe.custom.doctype.property_setter.property_setter import make_property_
 
 def after_migrate():
 	create_custom_fields()
+	create_roles()
 	# create_property_setter()
+
+
+def create_roles():
+	"""Create the roles this app checks for, if they do not exist yet."""
+	from qimaone_integrations.myqima.utils import BOOKING_CANCEL_BYPASS_ROLE
+
+	if frappe.db.exists("Role", BOOKING_CANCEL_BYPASS_ROLE):
+		return
+
+	frappe.get_doc({"doctype": "Role", "role_name": BOOKING_CANCEL_BYPASS_ROLE, "desk_access": 1}).insert(
+		ignore_permissions=True
+	)
 
 def create_custom_fields():
 	CUSTOM_FIELDS = {}

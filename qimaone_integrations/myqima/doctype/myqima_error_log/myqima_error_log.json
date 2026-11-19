@@ -1,0 +1,130 @@
+{
+ "actions": [],
+ "autoname": "MYQIMA-ERR-.YYYY.-.#####",
+ "creation": "2026-10-21 12:00:00.000000",
+ "description": "Problems the MyQima scheduler hit for a Quality Request. One open log per Quality Request and job: a repeat updates Last Seen and Occurrences instead of adding a new log.",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "quality_request",
+  "job",
+  "status",
+  "column_break_main",
+  "occurrences",
+  "first_seen",
+  "last_seen",
+  "quality_request_modified",
+  "error_section",
+  "error"
+ ],
+ "fields": [
+  {
+   "fieldname": "quality_request",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Quality Request",
+   "options": "Quality Request",
+   "read_only": 1,
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "job",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Job",
+   "options": "Inspection Booking\nReport Fetch",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "default": "Open",
+   "description": "Set to Resolved once fixed. An open Inspection Booking log keeps the scheduler from retrying its Quality Request until the Quality Request is modified or the log is resolved.",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Open\nResolved"
+  },
+  {
+   "fieldname": "column_break_main",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "1",
+   "fieldname": "occurrences",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Occurrences",
+   "read_only": 1
+  },
+  {
+   "fieldname": "first_seen",
+   "fieldtype": "Datetime",
+   "label": "First Seen",
+   "read_only": 1
+  },
+  {
+   "fieldname": "last_seen",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "Last Seen",
+   "read_only": 1
+  },
+  {
+   "description": "Last Modified of the Quality Request when the error was last seen.",
+   "fieldname": "quality_request_modified",
+   "fieldtype": "Datetime",
+   "label": "Quality Request Modified At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "error_section",
+   "fieldtype": "Section Break",
+   "label": "Error"
+  },
+  {
+   "fieldname": "error",
+   "fieldtype": "Long Text",
+   "label": "Error",
+   "read_only": 1
+  }
+ ],
+ "in_create": 1,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-10-21 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "myqima",
+ "name": "MyQima Error Log",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "delete": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "write": 1
+  },
+  {
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Quality Manager",
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "quality_request",
+ "track_changes": 1
+}
