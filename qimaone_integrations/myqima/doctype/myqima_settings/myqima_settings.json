@@ -140,8 +140,9 @@
    "label": "Enable Auto Inspection Booking"
   },
   {
-   "default": "1",
+   "default": "15",
    "depends_on": "eval:doc.enable_auto_booking",
+   "description": "Checked on every scheduler tick (4 minutes by default), so an interval shorter than the tick runs on every tick.",
    "fieldname": "booking_interval",
    "fieldtype": "Int",
    "label": "Inspection Booking Interval (Minutes)",
@@ -170,6 +171,7 @@
   {
    "default": "60",
    "depends_on": "eval:doc.enable_auto_report_fetch",
+   "description": "Each run checks up to 50 Quality Requests, carrying on after the last one checked, so every open booking gets its turn. Pending reports are asked from QIMA again on each run, so keep this at an hour or more.",
    "fieldname": "report_fetch_interval",
    "fieldtype": "Int",
    "label": "Report Fetch Interval (Minutes)",
@@ -189,7 +191,7 @@
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-11-19 15:00:00.000000",
+ "modified": "2026-11-20 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "myqima",
  "name": "MyQima Settings",

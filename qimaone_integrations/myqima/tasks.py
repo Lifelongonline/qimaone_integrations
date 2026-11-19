@@ -4,14 +4,18 @@
 """
 MyQima scheduler: auto inspection booking and auto report fetch.
 
-hooks.py runs run_auto_booking and run_auto_report_fetch every minute. Each reads its switch and
-interval from MyQima Settings and, once the interval has passed since its last run, queues the
-real work on the long queue; otherwise it ends after reading the settings, without touching QIMA
-or the Quality Requests. The frequency is therefore set from the MyQima Settings form.
+hooks.py runs run_scheduler on every scheduler tick ("all" event, every 4 minutes by default),
+which writes no Scheduled Job Log. It reads MyQima Settings once and queues each job on the long
+queue whose switch is on and whose interval has passed since its last run; with both switched off
+it ends after that one read. The frequency is therefore set from the MyQima Settings form, in
+steps of the scheduler tick.
 
 The queued job has a fixed job ID, so a new run is never queued while the previous one is still
-waiting or running. Each Quality Request is worked on holding its myqima_lock, shared with the
-form buttons, so the scheduler and a user never book or fetch the same one at once.
+waiting or running. A run stops starting new Quality Requests after RUN_TIME_BUDGET, so it hands
+the long worker back to other apps, and the next run carries on. The report fetch carries on after
+the last Quality Request it checked, so every open booking gets its turn however many there are.
+Each Quality Request is worked on holding its myqima_lock, shared with the form buttons, so the
+scheduler and a user never book or fetch the same one at once.
 
 Errors go to MyQima Error Log, one open log per Quality Request and job, never to Error Log.
 """
@@ -33,28 +37,34 @@ from qimaone_integrations.myqima.doctype.myqima_error_log.myqima_error_log impor
 )
 from qimaone_integrations.myqima.utils import MyQimaBusyError, myqima_lock
 
-# Quality Requests worked on per run; the rest follow on the next runs
+# Quality Requests worked on per run at most; the rest follow on the next runs
 BATCH_SIZE = 50
 
-# The long queue stops a job after JOB_TIMEOUT seconds. No new Quality Request is started once
-# RUN_TIME_BUDGET has passed, leaving room for the one in progress: a booking takes at most about
-# 70 seconds (token refresh or login, then the booking call), so a job is never stopped between
-# QIMA creating an order and the order being saved here, which would book it twice.
-JOB_TIMEOUT = 1500
-RUN_TIME_BUDGET = 1200
+# No new Quality Request is started once RUN_TIME_BUDGET seconds have passed, so a run holds a long
+# worker for a few minutes at most. The long queue stops a job after JOB_TIMEOUT seconds, which
+# leaves room for the one in progress: a booking takes at most about 70 seconds (token refresh or
+# login, then the booking call), so a job is never stopped between QIMA creating an order and the
+# order being saved here, which would book it twice.
+RUN_TIME_BUDGET = 300
+JOB_TIMEOUT = 900
 
 BOOKING_METHOD = "qimaone_integrations.myqima.tasks.book_pending_quality_requests"
 REPORT_METHOD = "qimaone_integrations.myqima.tasks.fetch_pending_reports"
 
-
-def run_auto_booking():
-	"""Every-minute dispatcher: queue the auto booking when MyQima Settings says it is due."""
-	_dispatch("enable_auto_booking", "booking_interval", "last_booking_run", BOOKING_METHOD)
+# Cache key of the last Quality Request the report fetch checked, as [posting_date, name]
+REPORT_CURSOR_KEY = "myqima_report_fetch_cursor"
 
 
-def run_auto_report_fetch():
-	"""Every-minute dispatcher: queue the auto report fetch when MyQima Settings says it is due."""
-	_dispatch("enable_auto_report_fetch", "report_fetch_interval", "last_report_fetch_run", REPORT_METHOD)
+def run_scheduler():
+	"""Scheduler tick: queue the auto booking and the auto report fetch when each is due."""
+	values = frappe.db.get_singles_dict("MyQima Settings")
+	if not values.get("sync_from_date"):
+		return
+
+	_dispatch(values, "enable_auto_booking", "booking_interval", "last_booking_run", BOOKING_METHOD)
+	_dispatch(
+		values, "enable_auto_report_fetch", "report_fetch_interval", "last_report_fetch_run", REPORT_METHOD
+	)
 
 
 def book_pending_quality_requests(from_date):
@@ -69,19 +79,40 @@ def book_pending_quality_requests(from_date):
 
 def fetch_pending_reports(from_date):
 	"""
-	Queued job: fetch the reports of each Quality Request with a report pending.
+	Queued job: fetch the reports of the next Quality Requests with a report pending.
 
-	The Quality Requests are picked by get_quality_requests_with_pending_reports.
+	The Quality Requests are picked by get_next_report_batch. After each one, it is saved as the
+	place the next run carries on from.
 
 	Args:
 		from_date (str): Sync From Date of MyQima Settings
 	"""
 	_run_batch(
 		REPORT_JOB,
-		get_quality_requests_with_pending_reports,
+		get_next_report_batch,
 		fetch_quality_request_reports,
 		from_date,
+		on_done=lambda row: frappe.cache.set_value(REPORT_CURSOR_KEY, [row.posting_date, row.name]),
 	)
+
+
+def get_next_report_batch(from_date):
+	"""
+	Return the next Quality Requests with a report pending, after the last one checked.
+
+	Bookings QIMA has not inspected yet, pending decisions and reports that could not be applied
+	all stay pending, so always taking the oldest would check the same ones on every run and never
+	reach the newer ones. The batch therefore carries on after the last Quality Request checked,
+	and wraps round to the oldest at the end.
+	"""
+	cursor = frappe.cache.get_value(REPORT_CURSOR_KEY)
+	rows = get_quality_requests_with_pending_reports(from_date, after=cursor)
+	if not cursor or len(rows) == BATCH_SIZE:
+		return rows
+
+	taken = {row.name for row in rows}
+	from_start = get_quality_requests_with_pending_reports(from_date)
+	return rows + [row for row in from_start if row.name not in taken][: BATCH_SIZE - len(rows)]
 
 
 def get_quality_requests_to_book(from_date):
@@ -94,10 +125,13 @@ def get_quality_requests_to_book(from_date):
 	request, so it is skipped without an error log. One whose booking was cancelled is never
 	booked again. One with an open booking error log is skipped until the Quality Request is
 	modified after the error, or the log is resolved.
+
+	Returns:
+		list[frappe._dict]: name and posting_date of each Quality Request
 	"""
-	return frappe.db.sql_list(
+	return frappe.db.sql(
 		"""
-		select qr.name
+		select qr.name, qr.posting_date
 		from `tabQuality Request` qr
 		where qr.docstatus = 1
 			and qr.posting_date >= %(from_date)s
@@ -130,10 +164,11 @@ def get_quality_requests_to_book(from_date):
 		limit %(limit)s
 		""",
 		{"from_date": from_date, "job": BOOKING_JOB, "limit": BATCH_SIZE},
+		as_dict=True,
 	)
 
 
-def get_quality_requests_with_pending_reports(from_date):
+def get_quality_requests_with_pending_reports(from_date, after=None):
 	"""
 	Return the Quality Requests with a report to fetch, oldest first, at most BATCH_SIZE.
 
@@ -142,10 +177,26 @@ def get_quality_requests_with_pending_reports(from_date):
 	fetched yet, was fetched with its report decision pending, or could not be applied to the
 	inspection. Failing ones are retried every run: an order finishes on QIMA's side, and a
 	report that could not be applied may have been fixed here, so there is nothing to wait for.
+
+	Args:
+		from_date (str): Sync From Date of MyQima Settings
+		after (list): [posting_date, name] of a Quality Request; only later ones are returned
+
+	Returns:
+		list[frappe._dict]: name and posting_date of each Quality Request
 	"""
-	return frappe.db.sql_list(
-		"""
-		select distinct qr.name
+	values = {"from_date": from_date, "limit": BATCH_SIZE}
+	after_condition = ""
+	if after:
+		values.update(after_date=after[0], after_name=after[1])
+		after_condition = """and (
+			qr.posting_date > %(after_date)s
+			or (qr.posting_date = %(after_date)s and qr.name > %(after_name)s)
+		)"""
+
+	return frappe.db.sql(
+		f"""
+		select distinct qr.name, qr.posting_date
 		from `tabQuality Request` qr
 		join `tabQuality Request Item` qri on qri.parent = qr.name
 		join `tabQuality Inspection` qi on qi.name = qri.quality_inspection
@@ -164,22 +215,26 @@ def get_quality_requests_with_pending_reports(from_date):
 				or md.myqima_decision_pending = 1
 				or md.myqima_report_not_applied = 1
 			)
+			{after_condition}
 		order by qr.posting_date, qr.name
 		limit %(limit)s
 		""",
-		{"from_date": from_date, "limit": BATCH_SIZE},
+		values,
+		as_dict=True,
 	)
 
 
-def _dispatch(enabled_field, interval_field, last_run_field, method):
+def _dispatch(values, enabled_field, interval_field, last_run_field, method):
 	"""
 	Queue method(from_date) on the long queue when the job is enabled and its interval has passed.
 
 	Nothing is queued while the previous run is still waiting or running. The last run is saved
 	when the job is queued, so a run that fails still waits a full interval before the next one.
+
+	Args:
+		values (dict): MyQima Settings, as read once per scheduler tick
 	"""
-	values = frappe.db.get_singles_dict("MyQima Settings")
-	if not cint(values.get(enabled_field)) or not values.get("sync_from_date"):
+	if not cint(values.get(enabled_field)):
 		return
 
 	now = now_datetime()
@@ -204,24 +259,29 @@ def _dispatch(enabled_field, interval_field, last_run_field, method):
 	)
 
 
-def _run_batch(job, get_quality_requests, work, from_date):
+def _run_batch(job, get_quality_requests, work, from_date, on_done=None):
 	"""
 	Run work for each Quality Request picked by get_quality_requests, until RUN_TIME_BUDGET is spent.
 
 	Never raises: a failure for one Quality Request is logged against it by _process, and a failure
 	to list them goes to the myqima log file, so nothing from these jobs lands in Error Log.
+
+	Args:
+		on_done (callable): called with each Quality Request's row once it is worked on or skipped
 	"""
 	started = time.monotonic()
 	try:
-		names = get_quality_requests(from_date)
+		rows = get_quality_requests(from_date)
 	except Exception:
 		frappe.logger("myqima").exception(f"[MyQima] {job}: could not list the Quality Requests")
 		return
 
-	for name in names:
+	for row in rows:
 		if time.monotonic() - started > RUN_TIME_BUDGET:
 			break
-		_process(name, job, work)
+		_process(row.name, job, work)
+		if on_done:
+			on_done(row)
 
 
 def _process(quality_request, job, work):

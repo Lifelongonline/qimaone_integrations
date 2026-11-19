@@ -172,15 +172,15 @@ doc_events = {
 default_log_clearing_doctypes = {"MyQima API Log": 90}
 
 scheduler_events = {
+	# MyQima auto booking / report fetch: one light check on every scheduler tick (4 minutes by
+	# default), which queues a job only when MyQima Settings says it is due (see myqima/tasks.py).
+	# "all" events write no Scheduled Job Log, unlike a cron entry.
+	"all": ["qimaone_integrations.myqima.tasks.run_scheduler"],
 	"cron": {
 		"* * * * *": [
 			"qimaone_integrations.schedulers.run_po_sync",
 			"qimaone_integrations.schedulers.run_inspection_sync",
 			"qimaone_integrations.schedulers.run_item_sync",
-			# MyQima auto booking / report fetch; each self-gates on its switch and
-			# interval in MyQima Settings (see myqima/tasks.py)
-			"qimaone_integrations.myqima.tasks.run_auto_booking",
-			"qimaone_integrations.myqima.tasks.run_auto_report_fetch",
 		],
 	},
 	# Each dispatcher above runs every minute but self-gates on its own "no of

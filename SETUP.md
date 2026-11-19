@@ -37,17 +37,20 @@ both are for System Managers only. Tokens are also refreshed on their own before
 | No of SKU per Quality Request | Int | When Validate SKU qty for QR creation is on | At least 1. |
 | Sync From Date (QR Posting Date) | Date | When a scheduler job is enabled | Both scheduler jobs only pick Quality Requests posted on or after this date. |
 | Enable Auto Inspection Booking | Check | No | Books submitted import-supplier Quality Requests never booked before that have a row in MYQIMA Allowed Item Group; others are skipped without an error. Cancelled bookings are not booked again. |
-| Inspection Booking Interval (Minutes) | Int | When auto booking is enabled | At least 1. |
+| Inspection Booking Interval (Minutes) | Int | When auto booking is enabled | At least 1; 15 by default. Checked on every scheduler tick, so an interval shorter than the tick runs on every tick. |
 | Enable Auto Report Fetch | Check | No | Fetches the reports of active bookings not fetched yet, whose report decision is pending, or that could not be applied (an unknown result, a produced quantity above Offered Qty or a failed submit). Those are listed in MyQima Error Log and fetched again until they apply. |
-| Report Fetch Interval (Minutes) | Int | When auto report fetch is enabled | At least 1. |
+| Report Fetch Interval (Minutes) | Int | When auto report fetch is enabled | At least 1; 60 by default. Each run checks up to 50 Quality Requests, carrying on after the last one checked and wrapping round, so every open booking gets its turn. Pending reports are asked from QIMA again on each run, so keep it at an hour or more. |
 | Last Booking Run / Last Report Fetch Run | Datetime | Read only | When each job last started. |
 
 ### Other requirements
 
 - **Supplier sub code:** every Quality Request row must have its SAP Supplier Sub Code; a booking
   sends it as the supplier code and refuses rows without one.
-- **Scheduler:** both jobs are checked every minute and run on the `long` queue, so the site
-  needs the scheduler enabled and a worker on the long queue.
+- **Scheduler:** one light check runs on every scheduler tick (Frappe's `all` event, every
+  4 minutes by default, writing no Scheduled Job Log) and queues each job that is due on the
+  `long` queue, so the site needs the scheduler enabled and a worker on the long queue. A run
+  never overlaps the previous one and starts no new Quality Request after 5 minutes, handing
+  the worker back to other apps; the next run carries on.
 - **Role:** assign **MyQima Booking Cancel Bypass** only to users allowed to cancel a Quality
   Request or Quality Inspection while its MyQima booking is still active.
 - **Error list:** System Managers and Quality Managers can read and resolve MyQima Error Logs.
@@ -58,5 +61,5 @@ both are for System Managers only. Tokens are also refreshed on their own before
 2. On a submitted import-supplier Quality Request, use MYQIMA → Create Inspection Booking and
    check MyQima API Log for the Inspection Booking call.
 3. Set Sync From Date, enable auto booking with an interval of 1 minute, and check that Last
-   Booking Run updates within a couple of minutes; anything that cannot be booked shows up in
-   MyQima Error Log and on its Quality Request.
+   Booking Run updates within one scheduler tick (about 4 minutes); anything that cannot be
+   booked shows up in MyQima Error Log and on its Quality Request.
