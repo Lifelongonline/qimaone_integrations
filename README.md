@@ -55,8 +55,6 @@ the Quality Inspections. Setup: see [SETUP.md](./SETUP.md#myqima); module detail
 - **QIMAone Supplier Map** (`qimaone_overlap`) — ERPNext ↔ QIMAone supplier and supplier-address value overlap, used both to validate and to translate values during CSV export.
 - **Qimaone Allowed item groups** — Item Groups eligible for QIMAone PO sync and supplier validation.
 - **QIMA Logs** — audit trail of every QIMAone API call (title, status code, response, process ID).
-- **Myqima Item Master** (child table on Item) — QIMA category/family/product-type IDs per item; no longer used by MyQima booking.
-
 ### Installation
 
 You can install this app using the [bench](https://github.com/frappe/bench) CLI:
