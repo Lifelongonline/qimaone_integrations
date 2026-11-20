@@ -45,7 +45,9 @@ both are for System Managers only. Tokens are also refreshed on their own before
 ### Other requirements
 
 - **Supplier sub code:** every Quality Request row must have its SAP Supplier Sub Code; a booking
-  sends it as the supplier code and refuses rows without one.
+  sends it as the supplier code and refuses rows without one. Saving an Address gives each of its
+  links to an **Import Supplier** with an SAP code a sub code (`<SAP code>SG001`, `SG002`, … per
+  supplier); other suppliers get none.
 - **Scheduler:** one light check runs on every scheduler tick (Frappe's `all` event, every
   4 minutes by default, writing no Scheduled Job Log) and queues each job that is due on the
   `long` queue, so the site needs the scheduler enabled and a worker on the long queue. A run
