@@ -8,15 +8,27 @@
   "credentials_section",
   "api_key",
   "referer",
-  "account",
-  "password",
-  "userid",
-  "column_break_hahq",
-  "access_token",
-  "refresh_key",
-  "token_expiry",
   "api_config_section",
-  "base_url"
+  "base_url",
+  "item_group_configuration_section",
+  "myqima_allowed_item_group",
+  "section_break_qelv",
+  "myqima_category_credentials",
+  "quality_inspection_status",
+  "auto_update_inspection_result",
+  "update_result_based_on",
+  "quality_request_validation_section",
+  "validate_sku_qty_for_qr_creation",
+  "no_of_sku_per_quality_request",
+  "scheduler_section",
+  "sync_from_date",
+  "enable_auto_booking",
+  "booking_interval",
+  "last_booking_run",
+  "column_break_scheduler",
+  "enable_auto_report_fetch",
+  "report_fetch_interval",
+  "last_report_fetch_run"
  ],
  "fields": [
   {
@@ -36,24 +48,6 @@
    "label": "Referer"
   },
   {
-   "fieldname": "access_token",
-   "fieldtype": "Long Text",
-   "label": "Access Token",
-   "read_only": 1
-  },
-  {
-   "fieldname": "refresh_key",
-   "fieldtype": "Data",
-   "label": "Refresh Key",
-   "read_only": 1
-  },
-  {
-   "fieldname": "token_expiry",
-   "fieldtype": "Datetime",
-   "label": "Token Expiry",
-   "read_only": 1
-  },
-  {
    "fieldname": "api_config_section",
    "fieldtype": "Section Break",
    "label": "API Config"
@@ -64,30 +58,140 @@
    "label": "Base URL"
   },
   {
-   "fieldname": "account",
-   "fieldtype": "Data",
-   "label": "Account"
+   "fieldname": "item_group_configuration_section",
+   "fieldtype": "Section Break",
+   "label": "Item Group Configuration"
   },
   {
-   "fieldname": "password",
-   "fieldtype": "Password",
-   "label": "Password"
+   "fieldname": "myqima_allowed_item_group",
+   "fieldtype": "Table",
+   "label": "MYQIMA Allowed Item Group",
+   "options": "QIMA Allowed Item Group"
   },
   {
-   "fieldname": "column_break_hahq",
+   "fieldname": "section_break_qelv",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "myqima_category_credentials",
+   "fieldtype": "Table",
+   "label": "MYQIMA Category Credentials",
+   "options": "QIMA Category Credentials"
+  },
+  {
+   "fieldname": "quality_inspection_status",
+   "fieldtype": "Select",
+   "label": "Quality Inspection Status",
+   "options": "\nDraft\nSubmitted"
+  },
+  {
+   "default": "0",
+   "fieldname": "auto_update_inspection_result",
+   "fieldtype": "Check",
+   "label": "Auto Update Inspection Result"
+  },
+  {
+   "depends_on": "eval:doc.auto_update_inspection_result",
+   "description": "With MyQima Report Decision, a pending decision leaves the inspection untouched and its report is fetched again until decided; an accepted report sets its produced quantity as Accepted Qty, a rejected one as Rejected Qty.",
+   "fieldname": "update_result_based_on",
+   "fieldtype": "Select",
+   "label": "Update Result Based On",
+   "mandatory_depends_on": "eval:doc.auto_update_inspection_result",
+   "options": "\nMyQima Overall Result\nMyQima Report Decision"
+  },
+  {
+   "fieldname": "quality_request_validation_section",
+   "fieldtype": "Section Break",
+   "label": "Quality Request Validation"
+  },
+  {
+   "default": "0",
+   "description": "Stops a Quality Request from being saved with more MyQima rows than No of SKU per Quality Request. Only rows of an import supplier whose item group is in MYQIMA Allowed Item Group are counted.",
+   "fieldname": "validate_sku_qty_for_qr_creation",
+   "fieldtype": "Check",
+   "label": "Validate SKU qty for QR creation"
+  },
+  {
+   "default": "10",
+   "depends_on": "eval:doc.validate_sku_qty_for_qr_creation",
+   "fieldname": "no_of_sku_per_quality_request",
+   "fieldtype": "Int",
+   "label": "No of SKU per Quality Request",
+   "mandatory_depends_on": "eval:doc.validate_sku_qty_for_qr_creation",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "scheduler_section",
+   "fieldtype": "Section Break",
+   "label": "Scheduler"
+  },
+  {
+   "description": "Both jobs only pick Quality Requests posted on or after this date.",
+   "fieldname": "sync_from_date",
+   "fieldtype": "Date",
+   "label": "Sync From Date (QR Posting Date)",
+   "mandatory_depends_on": "eval:doc.enable_auto_booking || doc.enable_auto_report_fetch"
+  },
+  {
+   "default": "0",
+   "description": "Books submitted import-supplier Quality Requests that have never been booked and have a row in MYQIMA Allowed Item Group. Cancelled bookings are not booked again.",
+   "fieldname": "enable_auto_booking",
+   "fieldtype": "Check",
+   "label": "Enable Auto Inspection Booking"
+  },
+  {
+   "default": "15",
+   "depends_on": "eval:doc.enable_auto_booking",
+   "description": "Checked on every scheduler tick (4 minutes by default), so an interval shorter than the tick runs on every tick.",
+   "fieldname": "booking_interval",
+   "fieldtype": "Int",
+   "label": "Inspection Booking Interval (Minutes)",
+   "mandatory_depends_on": "eval:doc.enable_auto_booking",
+   "non_negative": 1
+  },
+  {
+   "depends_on": "eval:doc.enable_auto_booking",
+   "fieldname": "last_booking_run",
+   "fieldtype": "Datetime",
+   "label": "Last Booking Run",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_scheduler",
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "userid",
-   "fieldtype": "Data",
-   "label": "UserId"
+   "default": "0",
+   "description": "Fetches the report of every active booking whose report is not fetched yet, whose report decision is still pending, or that could not be applied to its inspection. Replaces the old 6-hourly report job.",
+   "fieldname": "enable_auto_report_fetch",
+   "fieldtype": "Check",
+   "label": "Enable Auto Report Fetch"
+  },
+  {
+   "default": "60",
+   "depends_on": "eval:doc.enable_auto_report_fetch",
+   "description": "Each run checks up to 50 Quality Requests, carrying on after the last one checked, so every open booking gets its turn. Pending reports are asked from QIMA again on each run, so keep this at an hour or more.",
+   "fieldname": "report_fetch_interval",
+   "fieldtype": "Int",
+   "label": "Report Fetch Interval (Minutes)",
+   "mandatory_depends_on": "eval:doc.enable_auto_report_fetch",
+   "non_negative": 1
+  },
+  {
+   "depends_on": "eval:doc.enable_auto_report_fetch",
+   "fieldname": "last_report_fetch_run",
+   "fieldtype": "Datetime",
+   "label": "Last Report Fetch Run",
+   "no_copy": 1,
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-04-27 12:59:08.233073",
+ "modified": "2026-11-20 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "myqima",
  "name": "MyQima Settings",

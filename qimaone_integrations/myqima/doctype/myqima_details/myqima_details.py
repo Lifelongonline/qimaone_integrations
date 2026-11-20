@@ -5,5 +5,5 @@
 from frappe.model.document import Document
 
 
-class MyqimaItemMaster(Document):
+class MyQimaDetails(Document):
 	pass

@@ -1,0 +1,13 @@
+{
+    "Quality Request": [
+        {
+            "fieldname": "custom_push_consolidated_items_in_myqima",
+            "label": "Push Consolidated Items in MyQima Portal",
+            "fieldtype": "Check",
+            "default": "0",
+            "insert_after": "posting_date",
+            "allow_on_submit": 1,
+            "description": "Book the rows as one MyQima product listing each item as a reference, so MyQima gives one report for them all (at most 10 items). Unchecked, each item is booked as its own product with its own report."
+        }
+    ]
+}

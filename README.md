@@ -5,10 +5,10 @@ This app bundles **two separate, independent integrations** with QIMA's quality-
 | | QIMAone (`qimaone_integrations` module) | MyQima (`myqima` module) |
 |---|---|---|
 | Settings doctype | **Qima Settings** (single) | **MyQima Settings** (single) |
-| Auth | Bearer refresh token, regenerated daily | Access token + refresh key, auto-refreshed 10 min before expiry |
+| Auth | Bearer refresh token, regenerated daily | One MyQima login per item group; access token + refresh key, auto-refreshed 10 min before expiry |
 | Transport | CSV file upload to QIMAone's import API | JSON REST API |
-| Trigger | Scheduled (every minute dispatcher, gated per-job) | Manual — buttons on Quality Inspection / Quality Request Item |
-| Drives | PO import, product upload, inspection report fetch | Ad-hoc inspection booking (create/cancel) |
+| Trigger | Scheduled (every minute dispatcher, gated per-job) | Buttons on Quality Request / Quality Inspection, plus optional auto booking and report fetch schedulers |
+| Drives | PO import, product upload, inspection report fetch | Inspection booking (create/cancel) and report fetch for import-supplier Quality Requests |
 
 ### QIMAone integration
 
@@ -34,22 +34,27 @@ Each job runs only once its configured interval has elapsed since its last run (
 
 ### MyQima integration
 
-A separate, on-demand inspection-booking flow against MyQima's REST API — no scheduler involved.
+Books MyQima inspections for import-supplier Quality Requests and brings their reports back onto
+the Quality Inspections. Setup: see [SETUP.md](./SETUP.md#myqima); module details:
+[myqima/README.md](./qimaone_integrations/myqima/README.md).
 
-- **Create booking** — `myqima/customizations/quality_inspection/quality_inspection.py:create_inspection_booking` (button on Quality Inspection) and `myqima/customizations/quality_request/quality_request.py:create_inspection_booking` (button on Quality Request Item row) both POST to `{base_url}/v1.0/inspection`. The category/family/type IDs come from the **Myqima Item Master** child table on the Item; the supplier code comes from `Supplier.custom_myqima_supplier_code` (booking is blocked if the supplier isn't marked `custom_myqima_sync_status`). Booking ID/order number/product ID are written back onto the QC or QR Item row.
-- **Cancel booking** — `cancel_inspection_booking` DELETEs `{base_url}/user/{userid}/inspection/{booking_id}` with a reason, then clears the stored booking fields.
-- **Auth** (`myqima/utils.py:get_valid_token`) — reuses the cached `access_token` on **MyQima Settings** until 10 minutes before `token_expiry`, then refreshes via `PUT /auth/v2/token`; falls back to a full `POST /auth/v2/token` re-login if refresh fails or no token exists yet.
+- **Booking** — one MyQima inspection order for all eligible rows of a Quality Request, from the form or automatically on a schedule. With **Push Consolidated Items in MyQima Portal** checked, the rows are booked as one product listing each item as a reference (at most 10). The supplier code is the row's SAP Supplier Sub Code.
+- **Report fetch** — status, result, decision and PDF onto each Quality Inspection, from the form or on a schedule, optionally setting its status and Accepted or Rejected Qty and submitting it. A consolidated booking is mapped from each SKU's own decision.
+- **Cancel** — cancels the MyQima booking but keeps its details. A Quality Request or Quality Inspection with an active booking cannot be cancelled, except by users with the **MyQima Booking Cancel Bypass** role.
+- **SKU limit** — optionally stops a Quality Request from being saved with more MyQima rows than set in MyQima Settings.
+- **Auth** (`myqima/utils.py:get_valid_token`) — each **MYQIMA Category Credentials** row logs in on save and keeps its own token, refreshed via `PUT /auth/v2/token` 10 minutes before expiry, with a full re-login if refresh fails.
+- Every MyQima call is logged to **MyQima API Log**; anything the scheduler cannot do goes to **MyQima Error Log**.
 
 ### Key DocTypes
 
 - **Qima Settings** (single) — QIMAone credentials, CSV template paths, API URLs, sync intervals/toggles, last-run timestamps.
-- **MyQima Settings** (single) — MyQima base URL, API key, account credentials, cached access/refresh tokens.
+- **MyQima Settings** (single) — MyQima base URL, API key and referer, allowed item groups, one login per item group (**MYQIMA Category Credentials**), result mapping, SKU limit and the auto booking / report fetch scheduler.
+- **MyQima Details** (child table on Quality Inspection) — the inspection's MyQima booking and report.
+- **MyQima API Log** / **MyQima Error Log** — every MyQima call, and open problems of the MyQima scheduler.
 - **QIMAone Item Template Map** / **QIMAone Supplier Template Map** — field-name mapping between ERPNext fields and QIMAone CSV column headers.
 - **QIMAone Supplier Map** (`qimaone_overlap`) — ERPNext ↔ QIMAone supplier and supplier-address value overlap, used both to validate and to translate values during CSV export.
 - **Qimaone Allowed item groups** — Item Groups eligible for QIMAone PO sync and supplier validation.
 - **QIMA Logs** — audit trail of every QIMAone API call (title, status code, response, process ID).
-- **Myqima Item Master** (child table on Item) — QIMA category/family/product-type IDs per item, used to build MyQima booking payloads.
-
 ### Installation
 
 You can install this app using the [bench](https://github.com/frappe/bench) CLI:

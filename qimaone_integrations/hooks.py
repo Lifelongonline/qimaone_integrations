@@ -46,7 +46,13 @@ after_migrate = "qimaone_integrations.migrate.after_migrate"
 
 # include js in doctype views
 # doctype_js = {"doctype" : "public/js/doctype.js"}
-# doctype_js = {"Quality Inspection": "myqima/customizations/quality_inspection/quality_inspection.js"}
+doctype_js = {
+	"Quality Inspection": "myqima/customizations/quality_inspection/quality_inspection.js",
+	"Quality Request": [
+		"qimaone_integrations/customizations/quality_request/quality_request.js",
+		"myqima/customizations/quality_request/quality_request.js",
+	],
+}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
@@ -142,28 +148,46 @@ after_migrate = "qimaone_integrations.migrate.after_migrate"
 
 doc_events = {
 	"Quality Inspection": {
-		"on_cancel": "qimaone_integrations.qimaone_integrations.customizations.quality_inspection.quality_inspection.on_cancel",
+		"before_cancel": "qimaone_integrations.myqima.customizations.quality_inspection.quality_inspection.before_cancel",
+		"on_cancel":"qimaone_integrations.qimaone_integrations.customizations.quality_inspection.quality_inspection.on_cancel",
 		"on_trash": "qimaone_integrations.qimaone_integrations.customizations.quality_inspection.quality_inspection.on_trash",
 		"validate": "qimaone_integrations.qimaone_integrations.customizations.quality_inspection.quality_inspection.validate",
-	}
+	},
+	"Address": {
+		"validate": "qimaone_integrations.qimaone_integrations.customizations.address.address.validate",
+	},
+	"Quality Request": {
+		"validate": [
+			"qimaone_integrations.qimaone_integrations.customizations.quality_request.quality_request.validate",
+			"qimaone_integrations.myqima.customizations.quality_request.quality_request.validate",
+		],
+		"before_cancel": "qimaone_integrations.myqima.customizations.quality_request.quality_request.before_cancel",
+	},
 }
 
 # Scheduled Tasks
 # ---------------
 
+# Log Settings clears MyQima API Logs older than this many days (editable there)
+default_log_clearing_doctypes = {"MyQima API Log": 90}
+
 scheduler_events = {
-    "cron": {
-        "* * * * *": [
+	# MyQima auto booking / report fetch: one light check on every scheduler tick (4 minutes by
+	# default), which queues a job only when MyQima Settings says it is due (see myqima/tasks.py).
+	# "all" events write no Scheduled Job Log, unlike a cron entry.
+	"all": ["qimaone_integrations.myqima.tasks.run_scheduler"],
+	"cron": {
+		"* * * * *": [
 			"qimaone_integrations.schedulers.run_po_sync",
 			"qimaone_integrations.schedulers.run_inspection_sync",
-			"qimaone_integrations.schedulers.run_item_sync"
+			"qimaone_integrations.schedulers.run_item_sync",
 		],
 	},
 	# Each dispatcher above runs every minute but self-gates on its own "no of
 	# mins" field in Qima Settings, and is registered as its own separate
 	# entry so quality request booking (PO Sync), Inspection Sync and Item
 	# Sync each run fully independently of one another.
-    "daily": [
+	"daily": [
 		"qimaone_integrations.qimaone_integrations.doctype.qima_settings.api.api.generate_refresh_token"
 	],
 }

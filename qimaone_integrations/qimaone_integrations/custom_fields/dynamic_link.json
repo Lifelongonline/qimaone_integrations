@@ -1,0 +1,13 @@
+{
+    "Dynamic Link": [
+        {
+            "fieldname": "custom_sap_supplier_sub_code",
+            "label": "Sap Supplier Sub Code",
+            "fieldtype": "Data",
+            "insert_after": "link_title",
+            "read_only": 1,
+            "no_copy": 1,
+            "in_list_view": 1
+        }
+    ]
+}

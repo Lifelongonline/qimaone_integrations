@@ -1,0 +1,48 @@
+{
+    "Quality Request Item": [
+        {
+            "fieldname": "custom_supplier_address",
+            "label": "Supplier Address",
+            "fieldtype": "Link",
+            "options": "Address",
+            "insert_after": "supplier",
+            "depends_on": "eval:doc.supplier"
+        },
+        {
+            "fieldname": "custom_sap_supplier_sub_code",
+            "label": "Sap Supplier Sub Code",
+            "fieldtype": "Data",
+            "insert_after": "custom_supplier_address",
+            "depends_on": "eval:doc.custom_supplier_address",
+            "read_only": 1,
+            "no_copy": 1
+        },
+        {
+            "fieldname": "custom_import_supplier",
+            "label": "Import Supplier",
+            "fieldtype": "Check",
+            "default": "0",
+            "insert_after": "custom_sap_supplier_sub_code",
+            "fetch_from": "supplier.import_supplier",
+            "read_only": 1
+        },
+        {
+            "fieldname": "custom_myqima_inspection_created",
+            "label": "MyQima Inspection Created",
+            "fieldtype": "Check",
+            "default": "0",
+            "insert_after": "qc_inspector_name",
+            "read_only": 1,
+            "no_copy": 1
+        },
+        {
+            "fieldname": "custom_myqima_booking_cancelled",
+            "label": "MyQima Booking Cancelled",
+            "fieldtype": "Check",
+            "default": "0",
+            "insert_after": "custom_myqima_inspection_created",
+            "read_only": 1,
+            "no_copy": 1
+        }
+    ]
+}
