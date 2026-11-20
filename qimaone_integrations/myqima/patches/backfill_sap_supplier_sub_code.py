@@ -9,24 +9,34 @@ FIELD = "custom_sap_supplier_sub_code"
 
 
 def execute():
-	"""Give existing supplier addresses their SAP Supplier Sub Code, as saving them would.
+	"""Give existing import-supplier addresses their SAP Supplier Sub Code, as saving them would.
 
-	A sub code is only issued when an address is saved, so addresses made before the field
-	existed have none. Quality Requests and Quality Inspections pick it up on their next save.
+	A sub code is only issued when an address is saved, and only for a supplier ticked as Import
+	Supplier, so addresses made before the field existed have none. Quality Requests and Quality
+	Inspections pick it up on their next save.
 	"""
 	# Patches run before after_migrate, which is where the app creates its custom fields
 	create_custom_fields()
 
-	if not frappe.db.has_column("Supplier", "custom_sap_customer_code"):
-		print("SAP sub code backfill skipped: Supplier has no SAP code field (lifelong_customizations)")
-		return
+	for column in ("custom_sap_customer_code", "import_supplier"):
+		if not frappe.db.has_column("Supplier", column):
+			print(f"SAP sub code backfill skipped: Supplier has no {column} field")
+			return
 
-	# Oldest address first, so the numbers follow the order the addresses were made in
-	addresses = frappe.get_all(
-		"Dynamic Link",
-		filters={"parenttype": "Address", "link_doctype": "Supplier", FIELD: ("is", "not set")},
-		pluck="parent",
-		order_by="creation asc",
+	# Only addresses linked to an import supplier with an SAP code, oldest first, so the numbers
+	# follow the order the addresses were made in
+	addresses = frappe.db.sql_list(
+		f"""
+		select dl.parent
+		from `tabDynamic Link` dl
+		join `tabSupplier` supplier on supplier.name = dl.link_name
+		where dl.parenttype = 'Address'
+			and dl.link_doctype = 'Supplier'
+			and ifnull(dl.{FIELD}, '') = ''
+			and supplier.import_supplier = 1
+			and ifnull(supplier.custom_sap_customer_code, '') != ''
+		order by dl.creation
+		"""
 	)
 
 	for name in dict.fromkeys(addresses):
